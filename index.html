@@ -377,15 +377,50 @@
 
                 <div class="form-group">
                     <label>Nome do Participante:</label>
-                    <input type="text" id="participantName" placeholder="Ex: João Silva" style="width: 100%;">
+                    <input type="text" id="participantName" placeholder="Deixe vazio para auto-gerar" style="width: 100%;">
                 </div>
                 
                 <div class="form-group">
-                    <label>Tempo (min):</label>
-                    <input type="number" id="participantTime" placeholder="5" min="1" max="60" value="5" style="width: 100%;">
+                    <label>Tempo:</label>
+                    <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+                        <input type="number" id="participantMinutes" placeholder="Min" min="0" max="59" value="5" style="flex: 1;">
+                        <span style="color: #fff;">:</span>
+                        <input type="number" id="participantSeconds" placeholder="Seg" min="0" max="59" value="0" style="flex: 1;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="flex-wrap: wrap; gap: 8px;">
+                    <button class="btn btn-secondary" onclick="addTime(1, 0)" style="flex: 1; min-width: 80px;">+1min</button>
+                    <button class="btn btn-secondary" onclick="addTime(5, 0)" style="flex: 1; min-width: 80px;">+5min</button>
+                    <button class="btn btn-secondary" onclick="addTime(10, 0)" style="flex: 1; min-width: 80px;">+10min</button>
+                    <button class="btn btn-secondary" onclick="addTime(30, 0)" style="flex: 1; min-width: 80px;">+30min</button>
+                    <button class="btn btn-danger" onclick="clearTime()" style="width: 100%; margin-top: 5px;">Limpar</button>
                 </div>
                 
                 <button class="btn btn-primary" onclick="addParticipant()" style="width: 100%; margin-top: 10px;">Adicionar Participante</button>
+
+                <hr style="border: 1px solid #333; margin: 25px 0;">
+
+                <h3 style="color: #ffffff; margin-bottom: 15px; font-size: 1.1rem;">🚨 Configurações de Alerta</h3>
+                
+                <div class="form-group">
+                    <label>Alerta Amarelo (segundos restantes):</label>
+                    <input type="number" id="yellowAlert" value="60" min="1" style="width: 100%;">
+                </div>
+
+                <div class="form-group">
+                    <label>Alerta Vermelho (segundos restantes):</label>
+                    <input type="number" id="redAlert" value="30" min="1" style="width: 100%;">
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de Alerta:</label>
+                    <select id="alertType" style="width: 100%;">
+                        <option value="text">Apenas Texto</option>
+                        <option value="background">Fundo</option>
+                        <option value="both">Texto + Fundo</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Coluna Central: Controlo -->
@@ -456,23 +491,67 @@
         let currentTime = 0;
         let timerInterval = null;
         let displayWindow = null;
+        let participantCounter = 1;
 
-        // Adicionar participante
+        // Configurações de alerta
+        let alertSettings = {
+            yellow: 60,
+            red: 30,
+            type: 'text'
+        };
+
+        // Adicionar tempo aos campos
+        function addTime(minutes, seconds) {
+            const minField = document.getElementById('participantMinutes');
+            const secField = document.getElementById('participantSeconds');
+            
+            let currentMin = parseInt(minField.value) || 0;
+            let currentSec = parseInt(secField.value) || 0;
+            
+            currentMin += minutes;
+            currentSec += seconds;
+            
+            // Converter segundos em minutos se necessário
+            if (currentSec >= 60) {
+                currentMin += Math.floor(currentSec / 60);
+                currentSec = currentSec % 60;
+            }
+            
+            minField.value = currentMin;
+            secField.value = currentSec;
+        }
+
+        // Limpar campos de tempo
+        function clearTime() {
+            document.getElementById('participantMinutes').value = '0';
+            document.getElementById('participantSeconds').value = '0';
+        }
+
+        // Adicionar participante (atualizado)
         function addParticipant() {
-            const name = document.getElementById('participantName').value.trim();
-            const time = parseInt(document.getElementById('participantTime').value);
+            let name = document.getElementById('participantName').value.trim();
+            const minutes = parseInt(document.getElementById('participantMinutes').value) || 0;
+            const seconds = parseInt(document.getElementById('participantSeconds').value) || 0;
 
-            if (!name || !time) {
-                alert('Por favor, preencha o nome e o tempo do participante.');
+            if (minutes === 0 && seconds === 0) {
+                alert('Por favor, defina um tempo para o participante.');
                 return;
             }
+
+            // Auto-gerar nome se vazio
+            if (!name) {
+                name = `Participante ${participantCounter}`;
+                participantCounter++;
+            }
+
+            const totalSeconds = (minutes * 60) + seconds;
 
             const participant = {
                 id: Date.now(),
                 name: name,
-                timeMinutes: time,
-                timeSeconds: time * 60,
-                remainingTime: time * 60,
+                timeMinutes: minutes,
+                timeSeconds: totalSeconds,
+                remainingTime: totalSeconds,
                 status: 'ready'
             };
 
@@ -481,7 +560,8 @@
             
             // Limpar campos
             document.getElementById('participantName').value = '';
-            document.getElementById('participantTime').value = '5';
+            clearTime();
+            document.getElementById('participantMinutes').value = '5';
         }
 
         // Atualizar lista de participantes
@@ -637,8 +717,13 @@
             updateParticipantsList();
         }
 
-        // Atualizar display principal
+        // Atualizar display principal (melhorado com alertas)
         function updateDisplay() {
+            // Atualizar configurações de alerta
+            alertSettings.yellow = parseInt(document.getElementById('yellowAlert').value) || 60;
+            alertSettings.red = parseInt(document.getElementById('redAlert').value) || 30;
+            alertSettings.type = document.getElementById('alertType').value;
+
             const speakerEl = document.getElementById('currentSpeaker');
             const timeEl = document.getElementById('currentTime');
             const statusEl = document.getElementById('sessionStatus');
@@ -658,11 +743,10 @@
             speakerEl.textContent = participant.name;
             timeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
-            // Cor baseada no tempo restante
-            const percentage = currentTime / participant.timeSeconds;
-            if (percentage > 0.5) {
+            // Sistema de cores baseado nos alertas configurados
+            if (currentTime > alertSettings.yellow) {
                 timeEl.className = 'current-time time-green';
-            } else if (percentage > 0.2) {
+            } else if (currentTime > alertSettings.red) {
                 timeEl.className = 'current-time time-yellow';
             } else {
                 timeEl.className = 'current-time time-red';
@@ -718,12 +802,16 @@
                             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
                         }
                         .time-display {
-                            font-size: 12rem;
+                            font-size: 18vw;
                             font-weight: 700;
                             font-family: 'Courier New', monospace;
                             text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
-                            margin-bottom: 20px;
-                            line-height: 0.9;
+                            margin: 0;
+                            line-height: 0.8;
+                            height: 65vh;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
                         }
                         .time-green { color: #48bb78; }
                         .time-yellow { color: #ed8936; }
