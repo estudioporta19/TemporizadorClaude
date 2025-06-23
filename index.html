@@ -707,39 +707,7 @@
                 return;
             }
 
-            if (sessions[selectedName]) {
-                if (confirm(`Deseja carregar a sessão "${selectedName}"? A sessão atual será perdida.`)) {
-                    pauseTimer(); // Pausa qualquer timer em execução
-                    currentSessionName = selectedName;
-                    const loadedSession = sessions[selectedName];
-                    participants = loadedSession.participants.map(p => ({ ...p })); // Clona para não modificar a versão salva
-                    
-                    // Resetar o estado dos participantes ao carregar (todos como "ready", tempo restante para o tempo inicial)
-                    participants.forEach(p => {
-                        p.remainingTime = p.timeSeconds;
-                        p.status = 'ready';
-                    });
-
-                    // Carrega configurações de alerta
-                    alertSettings = { ...loadedSession.alertSettings };
-                    updateAlertSettingsDisplay(); // Atualiza os campos de input de alerta
-
-                    currentParticipantIndex = 0;
-                    if (participants.length > 0) {
-                        currentTime = participants[0].remainingTime;
-                    } else {
-                        currentTime = 0;
-                    }
-
-                    updateParticipantsList();
-                    updateDisplay();
-                    updateDisplayWindow();
-                    updateControlButtons();
-                    alert(`Sessão "${selectedName}" carregada com sucesso!`);
-                } else {
-                    document.getElementById('sessionSelector').value = currentSessionName; // Volta para a sessão anterior
-                }
-            }
+           
         }
 
         // Apaga a sessão selecionada no dropdown
