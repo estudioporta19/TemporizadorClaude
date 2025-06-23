@@ -26,7 +26,7 @@
 
         .main-layout {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr; 
             gap: 20px;
             margin-top: 20px;
         }
@@ -494,6 +494,29 @@
             </div>
 
             <div class="column">
+                <h2 class="column-title">🎮 Modo de Operação</h2>
+                
+                <div class="mode-selector">
+                    <div class="mode-btn active" onclick="setMode('individual')">
+                        <strong>Individual</strong><br>
+                        <small>Um orador</small>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('debate')">
+                        <strong>Debate</strong><br>
+                        <small>Todos visíveis</small>
+                    </div>
+                </div>
+
+                <h3 style="color: #ffffff; margin: 20px 0 15px 0; font-size: 1.1rem;">👥 Participantes</h3>
+                
+                <div class="participants-list" id="participantsList">
+                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
+                </div>
+
+                <button class="btn btn-danger" onclick="clearAllParticipants()" style="width: 100%; margin-top: 20px;">Limpar Lista de Participantes</button>
+            </div>
+
+            <div class="column">
                 <h2 class="column-title">🎛️ Controlo da Sessão</h2>
                 
                 <div class="current-session" id="sessionDisplay">
@@ -526,29 +549,6 @@
                     <input type="text" id="displayMessageInput" class="message-input" placeholder="Carregue Enter para enviar mensagem">
                 </div>
             </div>
-
-            <div class="column">
-                <h2 class="column-title">🎮 Modo de Operação</h2>
-                
-                <div class="mode-selector">
-                    <div class="mode-btn active" onclick="setMode('individual')">
-                        <strong>Individual</strong><br>
-                        <small>Um orador</small>
-                    </div>
-                    <div class="mode-btn" onclick="setMode('debate')">
-                        <strong>Debate</strong><br>
-                        <small>Todos visíveis</small>
-                    </div>
-                </div>
-
-                <h3 style="color: #ffffff; margin: 20px 0 15px 0; font-size: 1.1rem;">👥 Participantes</h3>
-                
-                <div class="participants-list" id="participantsList">
-                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
-                </div>
-
-                <button class="btn btn-danger" onclick="clearAllParticipants()" style="width: 100%; margin-top: 20px;">Limpar Lista de Participantes</button>
-            </div>
         </div>
     </div>
 
@@ -571,6 +571,7 @@
         // Sessões
         let sessions = {}; // Armazena todas as sessões guardadas
         let currentSessionName = 'Nova Sessão'; // Nome da sessão atualmente ativa/carregada
+        let displayUpdateInterval = null; // Para o loop de atualização do display
 
         // Paleta de cores para participantes - cores vibrantes e distintas
         const participantColors = [
@@ -642,9 +643,10 @@
 
             // Seleciona a sessão atualmente carregada ou "Nova Sessão"
             selector.value = currentSessionName;
-            if (selector.value !== currentSessionName) {
-                selector.value = 'Nova Sessão'; // Se a sessão atual não existe mais, seleciona nova sessão
+            // Se a sessão atual não existe mais (ex: foi apagada), volta para "Nova Sessão"
+            if (!Object.keys(sessions).includes(currentSessionName) && currentSessionName !== 'Nova Sessão') {
                 currentSessionName = 'Nova Sessão';
+                selector.value = 'Nova Sessão';
             }
         }
 
@@ -667,25 +669,35 @@
             return `Sessão ${nextNumber}`;
         }
 
-        // Grava a sessão atual
+        // Grava a sessão atual (CORRIGIDA)
         function saveCurrentSession() {
             pauseTimer(); // Pausa o timer antes de salvar
 
-            // Se a sessão atual é "Nova Sessão" e não está vazia, gera um novo nome
-            if (currentSessionName === 'Nova Sessão' && participants.length > 0) {
-                currentSessionName = getNextSessionName();
-            } else if (currentSessionName === 'Nova Sessão' && participants.length === 0) {
-                 alert('Não há participantes para salvar nesta nova sessão.');
+            if (participants.length === 0) {
+                 alert('Não há participantes para salvar nesta sessão.');
                  return;
             }
 
-            sessions[currentSessionName] = {
-                participants: participants.map(p => ({ ...p, status: 'ready' })), // Salva todos como 'ready'
+            let nameToSave = currentSessionName;
+            const isExistingSessionLoaded = Object.keys(sessions).includes(currentSessionName);
+            
+            // Se a sessão atual é "Nova Sessão" ou se não é uma sessão já carregada (ou seja, foi limpa ou é a primeira gravação)
+            // sempre atribui um novo nome sequencial.
+            if (currentSessionName === 'Nova Sessão' || !isExistingSessionLoaded) {
+                nameToSave = getNextSessionName();
+            }
+            // Se for uma sessão existente carregada, e foi alterada, ela será sobrescrita pelo mesmo nome.
+
+            sessions[nameToSave] = {
+                participants: participants.map(p => ({ ...p, status: 'ready', remainingTime: p.timeSeconds })), // Salva todos como 'ready' e tempo original
                 alertSettings: { ...alertSettings }
             };
             saveSessions();
-            alert(`Sessão "${currentSessionName}" salva com sucesso!`);
+            
+            // Define a sessão atualmente carregada para a sessão que acabou de ser salva
+            currentSessionName = nameToSave;
             document.getElementById('sessionSelector').value = currentSessionName; // Garante que a sessão salva está selecionada
+            alert(`Sessão "${currentSessionName}" salva com sucesso!`);
         }
 
         // Carrega a sessão selecionada no dropdown
@@ -699,7 +711,7 @@
                     alertSettings = { yellow: 60, red: 30, type: 'text' }; // Reseta configs de alerta
                     updateAlertSettingsDisplay();
                     updateDisplay();
-                    updateDisplayWindow();
+                    // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
                     updateControlButtons();
                 } else {
                     document.getElementById('sessionSelector').value = currentSessionName; // Volta para a sessão anterior
@@ -733,7 +745,7 @@
 
                     updateParticipantsList();
                     updateDisplay();
-                    updateDisplayWindow();
+                    // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
                     updateControlButtons();
                     alert(`Sessão "${selectedName}" carregada com sucesso!`);
                 } else {
@@ -765,7 +777,7 @@
                 }
                 updateSessionSelector(); // Atualiza o dropdown
                 updateDisplay();
-                updateDisplayWindow();
+                // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
                 updateControlButtons();
                 alert(`Sessão "${selectedName}" apagada com sucesso.`);
             }
@@ -778,7 +790,7 @@
             document.getElementById('alertType').value = alertSettings.type;
         }
 
-        // --- Funções Existentes (Com Pequenas Modificações) ---
+        // --- Funções Auxiliares ---
 
         // Adicionar tempo aos campos
         function addTime(minutes, seconds) {
@@ -866,7 +878,7 @@
             document.getElementById('participantSeconds').value = '0';
 
             updateControlButtons(); 
-            updateDisplayWindow(); 
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
         }
 
         // Atualizar lista de participantes (com botão "Iniciar" e ícone de remover)
@@ -902,7 +914,7 @@
 
         // Remover participante
         function removeParticipant(index) {
-            if (confirm('Tem certeza que deseja remover este participante?')) { // Confirmação aqui
+            if (confirm('Tem certeza que deseja remover este participante?')) { 
                 if (index === currentParticipantIndex && isRunning) {
                     pauseTimer();
                 }
@@ -921,7 +933,7 @@
 
                 updateParticipantsList();
                 updateDisplay();
-                updateDisplayWindow(); 
+                // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
                 updateControlButtons(); 
             }
         }
@@ -938,9 +950,11 @@
             currentParticipantIndex = 0;
             currentTime = 0;
             colorIndex = 0; 
+            currentSessionName = 'Nova Sessão'; // Ao limpar tudo, volta para "Nova Sessão"
+            updateSessionSelector(); // Atualiza o seletor para mostrar "Nova Sessão" selecionado
             updateParticipantsList();
             updateDisplay();
-            updateDisplayWindow(); 
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
             updateControlButtons();
         }
 
@@ -971,7 +985,7 @@
             participants[currentParticipantIndex].status = 'ready'; 
 
             updateDisplay();
-            updateDisplayWindow();
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
             updateParticipantsList(); 
 
             if (shouldStart) {
@@ -989,7 +1003,7 @@
             if (clickedButton) {
                 clickedButton.classList.add('active');
             }
-            updateDisplayWindow();
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
         }
 
         // Iniciar temporizador
@@ -1018,12 +1032,11 @@
                     participants[currentParticipantIndex].remainingTime = currentTime;
                 }
                 updateDisplay();
-                updateDisplayWindow();
                 updateParticipantsList(); 
             }, 1000);
 
             updateDisplay();
-            updateDisplayWindow(); 
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
             updateControlButtons(); 
         }
 
@@ -1039,7 +1052,7 @@
                 participants[currentParticipantIndex].status = 'ready'; 
             }
             updateDisplay();
-            updateDisplayWindow();
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
             updateParticipantsList();
             updateControlButtons(); 
         }
@@ -1065,7 +1078,7 @@
             }
 
             updateDisplay();
-            updateDisplayWindow();
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
             updateParticipantsList();
             updateControlButtons(); 
         }
@@ -1087,7 +1100,7 @@
             currentTime = participants[currentParticipantIndex].remainingTime;
             participants[currentParticipantIndex].status = 'ready'; 
             updateDisplay();
-            updateDisplayWindow();
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
             updateParticipantsList();
             updateControlButtons(); 
         }
@@ -1108,7 +1121,7 @@
             currentTime = participants[currentParticipantIndex].remainingTime;
             participants[currentParticipantIndex].status = 'ready'; 
             updateDisplay();
-            updateDisplayWindow();
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
             updateParticipantsList();
             updateControlButtons(); 
         }
@@ -1120,7 +1133,7 @@
             currentTime = currentTime + seconds; 
             participants[currentParticipantIndex].remainingTime = currentTime;
             updateDisplay();
-            updateDisplayWindow();
+            // updateDisplayWindow(); // Chamado por updateDisplayDataToDisplayWindow
             updateParticipantsList();
         }
 
@@ -1139,6 +1152,7 @@
                 timeEl.textContent = '00:00';
                 timeEl.className = 'current-time'; 
                 statusEl.textContent = 'Sessão não iniciada';
+                updateDisplayDataToDisplayWindow(); // Força atualização mesmo sem participantes
                 return;
             }
 
@@ -1168,6 +1182,8 @@
             } else {
                 statusEl.textContent = '⏹️ Parado';
             }
+
+            updateDisplayDataToDisplayWindow(); // Envia dados para a janela de display
         }
 
         // Função para controlar a habilitação/desabilitação dos botões
@@ -1191,17 +1207,20 @@
         // Enviar mensagem para o display externo
         function sendMessageToDisplay(message) {
             currentMessage = message;
-            updateDisplayWindow(); 
+            // updateDisplayWindow(); // Já é chamado por updateDisplayDataToDisplayWindow
         }
 
-        // Abrir janela de display
+        // --- Funções para Gerir a Janela de Display ---
+
+        // Abre a janela de display e configura o canal de comunicação
         function openDisplayWindow() {
+            // Se a janela já existe e está aberta, foca nela
             if (displayWindow && !displayWindow.closed) {
                 displayWindow.focus();
-                updateDisplayWindow(); 
                 return;
             }
 
+            // Abre uma nova janela
             displayWindow = window.open('', 'displayWindow', 'width=1024,height=768,resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no');
             
             if (!displayWindow) {
@@ -1209,6 +1228,7 @@
                 return;
             }
 
+            // Escreve o conteúdo HTML base na nova janela
             displayWindow.document.write(`
                 <!DOCTYPE html>
                 <html lang="pt">
@@ -1335,114 +1355,137 @@
                         <div class="status-display" id="displayStatus">Sistema iniciado</div>
                     </div>
                     <div class="message-area" id="displayMessageArea"></div>
+
+                    <script>
+                        // Função que a janela principal vai chamar para atualizar o conteúdo
+                        window.updateDisplayContent = function(data) {
+                            const container = document.getElementById('displayContainer');
+                            const messageArea = document.getElementById('displayMessageArea');
+
+                            if (messageArea) {
+                                messageArea.textContent = data.message;
+                            }
+
+                            if (data.mode === 'individual') {
+                                const participant = data.currentParticipantData;
+                                const displayMinutes = Math.floor(Math.abs(data.currentTime) / 60);
+                                const displaySeconds = Math.abs(data.currentTime) % 60;
+                                const sign = data.currentTime < 0 ? '-' : '';
+
+                                let timeClass = 'time-green';
+                                if (data.currentTime <= data.alertSettings.red) {
+                                    timeClass = 'time-red';
+                                } else if (data.currentTime <= data.alertSettings.yellow) {
+                                    timeClass = 'time-yellow';
+                                }
+                                if (data.currentTime < 0) {
+                                    timeClass += ' time-negative';
+                                }
+
+                                container.innerHTML = \`
+                                    <div class="speaker-name" id="displaySpeaker">\${participant ? participant.name : 'Aguardando...'}</div>
+                                    <div class="time-display \${timeClass}" id="displayTime">\${participant ? \`\${sign}\${displayMinutes.toString().padStart(2, '0')}:\${displaySeconds.toString().padStart(2, '0')}\` : '00:00'}</div>
+                                    <div class="status-display" id="displayStatus">\${data.isRunning ? '🔴 Em execução' : (data.isPaused ? '⏸️ Pausado' : '⏹️ Parado')}</div>
+                                \`;
+                                
+                                if (data.alertSettings.type === 'background' || data.alertSettings.type === 'both') {
+                                    if (data.currentTime <= data.alertSettings.red) {
+                                        document.body.style.backgroundColor = '#4a0e0e';
+                                    } else if (data.currentTime <= data.alertSettings.yellow) {
+                                        document.body.style.backgroundColor = '#4a320e';
+                                    } else {
+                                        document.body.style.backgroundColor = '#1a202c';
+                                    }
+                                } else {
+                                    document.body.style.backgroundColor = '#1a202c';
+                                }
+
+                            } else if (data.mode === 'debate') {
+                                const debateParticipantsHtml = data.participants.map((participant, index) => {
+                                    const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
+                                    const displaySeconds = Math.abs(participant.remainingTime) % 60;
+                                    const sign = participant.remainingTime < 0 ? '-' : '';
+
+                                    let timeClass = '';
+                                    if (participant.remainingTime <= data.alertSettings.red) {
+                                        timeClass = 'time-red';
+                                    } else if (participant.remainingTime <= data.alertSettings.yellow) {
+                                        timeClass = 'time-yellow';
+                                    } else {
+                                        timeClass = 'time-green';
+                                    }
+                                    if (participant.remainingTime < 0) {
+                                        timeClass += ' time-negative';
+                                    }
+
+                                    const isActive = index === data.currentParticipantIndex && data.isRunning;
+                                    return \`
+                                        <div class="debate-participant \${isActive ? 'active' : ''}" style="border-color: \${participant.color};">
+                                            <div class="debate-name">\${participant.name}</div>
+                                            <div class="debate-time \${timeClass}">\${sign}\${displayMinutes.toString().padStart(2, '0')}:\${displaySeconds.toString().padStart(2, '0')}</div>
+                                        </div>
+                                    \`;
+                                }).join('');
+
+                                container.innerHTML = \`
+                                    <div class="debate-grid">
+                                        \${debateParticipantsHtml}
+                                    </div>
+                                \`;
+                                document.body.style.backgroundColor = '#1a202c'; 
+                            }
+                        };
+
+                        // Lógica para fechar a janela principal se esta for fechada
+                        window.addEventListener('beforeunload', function() {
+                            if (window.opener && !window.opener.closed) {
+                                // Aqui pode enviar uma mensagem ou acionar uma limpeza na janela principal
+                            }
+                        });
+                    </script>
                 </body>
                 </html>
             `);
 
-            displayWindow.document.close();
-            updateDisplayWindow();
-        }
+            displayWindow.document.close(); // Fechar o documento para que o navegador renderize
 
-        // Atualizar janela de display
-        function updateDisplayWindow() {
-            if (!displayWindow || displayWindow.closed) {
-                return;
-            }
-
-            const container = displayWindow.document.getElementById('displayContainer');
-            const messageArea = displayWindow.document.getElementById('displayMessageArea');
-            
-            const currentYellowAlert = parseInt(document.getElementById('yellowAlert').value) || 0;
-            const currentRedAlert = parseInt(document.getElementById('redAlert').value) || 0;
-            const currentAlertType = document.getElementById('alertType').value;
-
-            container.innerHTML = '';
-            
-            if (messageArea) {
-                messageArea.textContent = currentMessage;
-            }
-
-            if (currentMode === 'individual') {
-                const participant = participants[currentParticipantIndex];
-                const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
-                const displaySeconds = Math.abs(currentTime) % 60;
-                const sign = currentTime < 0 ? '-' : '';
-
-                let timeClass = 'time-green';
-                
-                if (currentTime <= currentRedAlert) {
-                    timeClass = 'time-red';
-                } else if (currentTime <= currentYellowAlert) {
-                    timeClass = 'time-yellow';
-                }
-
-                if (currentTime < 0) {
-                    timeClass += ' time-negative';
-                }
-
-                container.innerHTML = `
-                    <div class="speaker-name" id="displaySpeaker">${participant ? participant.name : 'Aguardando...'}</div>
-                    <div class="time-display ${timeClass}" id="displayTime">${participant ? `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}` : '00:00'}</div>
-                    <div class="status-display" id="displayStatus">${isRunning ? '🔴 Em execução' : (isPaused ? '⏸️ Pausado' : '⏹️ Parado')}</div>
-                `;
-                
-                if (currentAlertType === 'background' || currentAlertType === 'both') {
-                    if (currentTime <= currentRedAlert) {
-                        displayWindow.document.body.style.backgroundColor = '#4a0e0e';
-                    } else if (currentTime <= currentYellowAlert) {
-                        displayWindow.document.body.style.backgroundColor = '#4a320e';
-                    } else {
-                        displayWindow.document.body.style.backgroundColor = '#1a202c';
-                    }
-                } else {
-                    displayWindow.document.body.style.backgroundColor = '#1a202c';
-                }
-
-            } else if (currentMode === 'debate') {
-                const debateParticipantsHtml = participants.map((participant, index) => {
-                    const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
-                    const displaySeconds = Math.abs(participant.remainingTime) % 60;
-                    const sign = participant.remainingTime < 0 ? '-' : '';
-
-                    let timeClass = '';
-                    
-                    if (participant.remainingTime <= currentRedAlert) {
-                        timeClass = 'time-red';
-                    } else if (participant.remainingTime <= currentYellowAlert) {
-                        timeClass = 'time-yellow';
-                    } else {
-                        timeClass = 'time-green';
-                    }
-
-                    if (participant.remainingTime < 0) {
-                        timeClass += ' time-negative';
-                    }
-
-                    const isActive = index === currentParticipantIndex && isRunning;
-                    return `
-                        <div class="debate-participant ${isActive ? 'active' : ''}" style="border-color: ${participant.color};">
-                            <div class="debate-name">${participant.name}</div>
-                            <div class="debate-time ${timeClass}">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</div>
-                        </div>
-                    `;
-                }).join('');
-
-                container.innerHTML = `
-                    <div class="debate-grid">
-                        ${debateParticipantsHtml}
-                    </div>
-                `;
-                displayWindow.document.body.style.backgroundColor = '#1a202c'; 
+            // Inicia o loop de atualização do display, se ainda não estiver ativo
+            if (!displayUpdateInterval) {
+                displayUpdateInterval = setInterval(updateDisplayDataToDisplayWindow, 100); // Atualiza 10 vezes por segundo
             }
         }
+
+        // Envia dados completos para a janela de display (NOVA FUNÇÃO)
+        function updateDisplayDataToDisplayWindow() {
+            if (displayWindow && !displayWindow.closed && typeof displayWindow.updateDisplayContent === 'function') {
+                const dataToSend = {
+                    participants: participants,
+                    currentParticipantIndex: currentParticipantIndex,
+                    currentMode: currentMode,
+                    isRunning: isRunning,
+                    isPaused: isPaused,
+                    currentTime: currentTime,
+                    alertSettings: alertSettings,
+                    currentParticipantData: participants[currentParticipantIndex], // Envia os dados do participante atual
+                    message: currentMessage
+                };
+                displayWindow.updateDisplayContent(dataToSend);
+            } else if (displayUpdateInterval) {
+                // Se a janela secundária foi fechada, limpa o intervalo de atualização
+                clearInterval(displayUpdateInterval);
+                displayUpdateInterval = null;
+                displayWindow = null; // Garante que a referência seja nula
+            }
+        }
+
 
         // Inicializa a exibição ao carregar a página
         document.addEventListener('DOMContentLoaded', () => {
-            loadSessions(); // Carrega as sessões ao iniciar
+            loadSessions(); 
             updateParticipantsList();
-            updateDisplay();
+            updateDisplay(); // Chama updateDisplayDataToDisplayWindow dentro dela
             updateControlButtons(); 
-            updateAlertSettingsDisplay(); // Garante que os campos de alerta exibem os valores corretos ao carregar
+            updateAlertSettingsDisplay(); 
 
             const messageInput = document.getElementById('displayMessageInput');
             if (messageInput) {
@@ -1453,6 +1496,16 @@
                         this.value = ''; 
                     }
                 });
+            }
+        });
+
+        // Adiciona um listener para limpar o intervalo quando a janela principal é fechada
+        window.addEventListener('beforeunload', () => {
+            if (displayUpdateInterval) {
+                clearInterval(displayUpdateInterval);
+            }
+            if (displayWindow && !displayWindow.closed) {
+                displayWindow.close(); // Fecha a janela secundária também
             }
         });
     </script>
