@@ -379,6 +379,18 @@
             opacity: 0.8;
             font-style: italic;
         }
+        
+        /* Styles for session controls */
+        .session-control-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .session-control-group .btn {
+            flex: 1;
+            min-width: 100px;
+        }
 
 
         @media (max-width: 1200px) {
@@ -421,9 +433,17 @@
                 <h2 class="column-title">⚙️ Configuração de Sessão</h2>
                 
                 <div class="form-group">
-                    <label>Nome da Sessão:</label>
-                    <input type="text" id="sessionName" placeholder="Ex: Debate Final 2024" value="Nova Sessão" style="width: 100%;">
+                    <label>Sessão Atual:</label>
+                    <select id="sessionSelector" style="width: 100%;" onchange="loadSelectedSession()"></select>
                 </div>
+                <div class="session-control-group">
+                    <button class="btn btn-primary" onclick="saveCurrentSession()">💾 Gravar Sessão</button>
+                    <button class="btn btn-danger" onclick="deleteSelectedSession()">🗑️ Apagar Sessão</button>
+                </div>
+
+                <hr style="border: 1px solid #333; margin: 25px 0;">
+
+                <h3 style="color: #ffffff; margin-bottom: 15px; font-size: 1.1rem;">➕ Adicionar Participante</h3>
 
                 <div class="form-group">
                     <label>Nome do Participante:</label>
@@ -548,6 +568,10 @@
         let displayWindow = null;
         let currentMessage = ""; // Para armazenar a mensagem para o display
 
+        // Sessões
+        let sessions = {}; // Armazena todas as sessões guardadas
+        let currentSessionName = 'Nova Sessão'; // Nome da sessão atualmente ativa/carregada
+
         // Paleta de cores para participantes - cores vibrantes e distintas
         const participantColors = [
             '#667eea', // Amethyst (Azul/Roxo)
@@ -572,6 +596,190 @@
             type: 'text'
         };
 
+        // --- Funções de Gestão de Sessões ---
+
+        // Carrega todas as sessões do Local Storage
+        function loadSessions() {
+            const savedSessions = localStorage.getItem('presentationTimerSessions');
+            if (savedSessions) {
+                sessions = JSON.parse(savedSessions);
+            } else {
+                sessions = {};
+            }
+            updateSessionSelector();
+        }
+
+        // Guarda todas as sessões no Local Storage
+        function saveSessions() {
+            localStorage.setItem('presentationTimerSessions', JSON.stringify(sessions));
+            updateSessionSelector(); // Atualiza o seletor após salvar
+        }
+
+        // Atualiza o dropdown do seletor de sessões
+        function updateSessionSelector() {
+            const selector = document.getElementById('sessionSelector');
+            selector.innerHTML = ''; // Limpa as opções existentes
+
+            // Adiciona a opção "Nova Sessão" sempre no topo
+            const newSessionOption = document.createElement('option');
+            newSessionOption.value = 'Nova Sessão';
+            newSessionOption.textContent = 'Nova Sessão';
+            selector.appendChild(newSessionOption);
+
+            // Adiciona as sessões guardadas, ordenadas numericamente
+            const sortedSessionNames = Object.keys(sessions).sort((a, b) => {
+                const numA = parseInt(a.replace('Sessão ', '')) || 0;
+                const numB = parseInt(b.replace('Sessão ', '')) || 0;
+                return numA - numB;
+            });
+
+            sortedSessionNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                selector.appendChild(option);
+            });
+
+            // Seleciona a sessão atualmente carregada ou "Nova Sessão"
+            selector.value = currentSessionName;
+            if (selector.value !== currentSessionName) {
+                selector.value = 'Nova Sessão'; // Se a sessão atual não existe mais, seleciona nova sessão
+                currentSessionName = 'Nova Sessão';
+            }
+        }
+
+        // Gera o próximo nome sequencial para uma nova sessão
+        function getNextSessionName() {
+            let nextNumber = 1;
+            const existingNumbers = Object.keys(sessions)
+                .filter(name => name.startsWith('Sessão '))
+                .map(name => parseInt(name.replace('Sessão ', '')))
+                .filter(num => !isNaN(num))
+                .sort((a, b) => a - b);
+
+            for (let i = 0; i < existingNumbers.length; i++) {
+                if (existingNumbers[i] === nextNumber) {
+                    nextNumber++;
+                } else {
+                    break;
+                }
+            }
+            return `Sessão ${nextNumber}`;
+        }
+
+        // Grava a sessão atual
+        function saveCurrentSession() {
+            pauseTimer(); // Pausa o timer antes de salvar
+
+            // Se a sessão atual é "Nova Sessão" e não está vazia, gera um novo nome
+            if (currentSessionName === 'Nova Sessão' && participants.length > 0) {
+                currentSessionName = getNextSessionName();
+            } else if (currentSessionName === 'Nova Sessão' && participants.length === 0) {
+                 alert('Não há participantes para salvar nesta nova sessão.');
+                 return;
+            }
+
+            sessions[currentSessionName] = {
+                participants: participants.map(p => ({ ...p, status: 'ready' })), // Salva todos como 'ready'
+                alertSettings: { ...alertSettings }
+            };
+            saveSessions();
+            alert(`Sessão "${currentSessionName}" salva com sucesso!`);
+            document.getElementById('sessionSelector').value = currentSessionName; // Garante que a sessão salva está selecionada
+        }
+
+        // Carrega a sessão selecionada no dropdown
+        function loadSelectedSession() {
+            const selectedName = document.getElementById('sessionSelector').value;
+            
+            if (selectedName === 'Nova Sessão') {
+                if (confirm('Deseja iniciar uma nova sessão? Os participantes atuais serão perdidos.')) {
+                    clearAllParticipants(false); // Limpa participantes sem confirmação de limpeza geral
+                    currentSessionName = 'Nova Sessão';
+                    alertSettings = { yellow: 60, red: 30, type: 'text' }; // Reseta configs de alerta
+                    updateAlertSettingsDisplay();
+                    updateDisplay();
+                    updateDisplayWindow();
+                    updateControlButtons();
+                } else {
+                    document.getElementById('sessionSelector').value = currentSessionName; // Volta para a sessão anterior
+                }
+                return;
+            }
+
+            if (sessions[selectedName]) {
+                if (confirm(`Deseja carregar a sessão "${selectedName}"? A sessão atual será perdida.`)) {
+                    pauseTimer(); // Pausa qualquer timer em execução
+                    currentSessionName = selectedName;
+                    const loadedSession = sessions[selectedName];
+                    participants = loadedSession.participants.map(p => ({ ...p })); // Clona para não modificar a versão salva
+                    
+                    // Resetar o estado dos participantes ao carregar (todos como "ready", tempo restante para o tempo inicial)
+                    participants.forEach(p => {
+                        p.remainingTime = p.timeSeconds;
+                        p.status = 'ready';
+                    });
+
+                    // Carrega configurações de alerta
+                    alertSettings = { ...loadedSession.alertSettings };
+                    updateAlertSettingsDisplay(); // Atualiza os campos de input de alerta
+
+                    currentParticipantIndex = 0;
+                    if (participants.length > 0) {
+                        currentTime = participants[0].remainingTime;
+                    } else {
+                        currentTime = 0;
+                    }
+
+                    updateParticipantsList();
+                    updateDisplay();
+                    updateDisplayWindow();
+                    updateControlButtons();
+                    alert(`Sessão "${selectedName}" carregada com sucesso!`);
+                } else {
+                    document.getElementById('sessionSelector').value = currentSessionName; // Volta para a sessão anterior
+                }
+            }
+        }
+
+        // Apaga a sessão selecionada no dropdown
+        function deleteSelectedSession() {
+            const selectedName = document.getElementById('sessionSelector').value;
+            
+            if (selectedName === 'Nova Sessão') {
+                alert('Não é possível apagar a sessão "Nova Sessão".');
+                return;
+            }
+
+            if (confirm(`Tem certeza que deseja apagar a sessão "${selectedName}"? Esta ação não pode ser desfeita.`)) {
+                pauseTimer(); // Pausa o timer
+                delete sessions[selectedName];
+                saveSessions();
+                
+                // Se a sessão apagada era a atualmente carregada, volte para "Nova Sessão"
+                if (currentSessionName === selectedName) {
+                    currentSessionName = 'Nova Sessão';
+                    clearAllParticipants(false); // Limpa os participantes da tela atual
+                    alertSettings = { yellow: 60, red: 30, type: 'text' }; // Reseta configs de alerta
+                    updateAlertSettingsDisplay();
+                }
+                updateSessionSelector(); // Atualiza o dropdown
+                updateDisplay();
+                updateDisplayWindow();
+                updateControlButtons();
+                alert(`Sessão "${selectedName}" apagada com sucesso.`);
+            }
+        }
+
+        // Atualiza os campos de input de alerta com as configurações atuais
+        function updateAlertSettingsDisplay() {
+            document.getElementById('yellowAlert').value = alertSettings.yellow;
+            document.getElementById('redAlert').value = alertSettings.red;
+            document.getElementById('alertType').value = alertSettings.type;
+        }
+
+        // --- Funções Existentes (Com Pequenas Modificações) ---
+
         // Adicionar tempo aos campos
         function addTime(minutes, seconds) {
             const minField = document.getElementById('participantMinutes');
@@ -583,7 +791,6 @@
             currentMin += minutes;
             currentSec += seconds;
             
-            // Converter segundos em minutos se necessário
             if (currentSec >= 60) {
                 currentMin += Math.floor(currentSec / 60);
                 currentSec = currentSec % 60;
@@ -608,7 +815,6 @@
             const minutes = parseInt(document.getElementById('participantMinutes').value) || 0;
             const seconds = parseInt(document.getElementById('participantSeconds').value) || 0;
 
-            // Validação para evitar adicionar participante sem tempo e sem nome personalizado
             if (minutes === 0 && seconds === 0 && !name) {
                  alert('Por favor, defina um tempo para o participante, ou insira um nome para auto-gerar o tempo padrão (00:00).');
                  return;
@@ -618,7 +824,6 @@
                 return;
             }
 
-            // Lógica para encontrar o próximo número sequencial disponível
             let nextParticipantNumber = 1;
             const existingNumbers = participants
                 .filter(p => p.name.startsWith('Participante '))
@@ -634,16 +839,14 @@
                 }
             }
 
-            // Auto-gerar nome se vazio, usando o nextParticipantNumber
             if (!name) {
                 name = `Participante ${nextParticipantNumber}`;
             }
 
             const totalSeconds = (minutes * 60) + seconds;
             
-            // Atribui uma cor da paleta
             const assignedColor = participantColors[colorIndex % participantColors.length];
-            colorIndex++; // Avança para a próxima cor
+            colorIndex++; 
 
             const participant = {
                 id: Date.now(),
@@ -652,19 +855,18 @@
                 timeSeconds: totalSeconds,
                 remainingTime: totalSeconds,
                 status: 'ready',
-                color: assignedColor // Adiciona a cor ao objeto participante
+                color: assignedColor 
             };
 
             participants.push(participant);
             updateParticipantsList();
             
-            // Limpar campos de nome e tempo após adicionar
             document.getElementById('participantName').value = '';
             document.getElementById('participantMinutes').value = '0';
             document.getElementById('participantSeconds').value = '0';
 
-            updateControlButtons(); // Atualiza botões de controle ao adicionar participante
-            updateDisplayWindow(); // **NOVO**: Atualiza a janela de display para refletir novos participantes
+            updateControlButtons(); 
+            updateDisplayWindow(); 
         }
 
         // Atualizar lista de participantes (com botão "Iniciar" e ícone de remover)
@@ -700,62 +902,62 @@
 
         // Remover participante
         function removeParticipant(index) {
-            // Se o participante removido for o ativo, pare o timer
-            if (index === currentParticipantIndex && isRunning) {
-                pauseTimer();
-            }
+            if (confirm('Tem certeza que deseja remover este participante?')) { // Confirmação aqui
+                if (index === currentParticipantIndex && isRunning) {
+                    pauseTimer();
+                }
 
-            participants.splice(index, 1);
-            
-            // Ajustar o índice do participante atual se o removido era o ativo ou um antes
-            if (currentParticipantIndex >= participants.length) {
-                currentParticipantIndex = Math.max(0, participants.length - 1);
-            }
-            if (participants.length > 0) {
-                 currentTime = participants[currentParticipantIndex].remainingTime;
-            } else {
-                currentTime = 0;
-                currentParticipantIndex = 0; // Resetar índice se não há participantes
-            }
+                participants.splice(index, 1);
+                
+                if (currentParticipantIndex >= participants.length) {
+                    currentParticipantIndex = Math.max(0, participants.length - 1);
+                }
+                if (participants.length > 0) {
+                    currentTime = participants[currentParticipantIndex].remainingTime;
+                } else {
+                    currentTime = 0;
+                    currentParticipantIndex = 0; 
+                }
 
-            updateParticipantsList();
-            updateDisplay();
-            updateDisplayWindow(); // **NOVO**: Atualiza a janela de display para refletir a remoção
-            updateControlButtons(); // Atualiza botões de controle ao remover participante
-        }
-
-        // Limpar todos os participantes
-        function clearAllParticipants() {
-            if (confirm('Tem certeza que deseja remover TODOS os participantes? Esta ação não pode ser desfeita.')) {
-                pauseTimer(); // Pausa qualquer timer em execução
-                participants = [];
-                currentParticipantIndex = 0;
-                currentTime = 0;
-                colorIndex = 0; // Resetar o índice de cores também
                 updateParticipantsList();
                 updateDisplay();
-                updateDisplayWindow(); // **NOVO**: Atualiza a janela de display para refletir a limpeza
-                updateControlButtons();
+                updateDisplayWindow(); 
+                updateControlButtons(); 
             }
+        }
+
+        // Limpar todos os participantes (com novo parâmetro para evitar confirmação múltipla)
+        function clearAllParticipants(askConfirmation = true) {
+            if (askConfirmation) {
+                if (!confirm('Tem certeza que deseja remover TODOS os participantes? Esta ação não pode ser desfeita.')) {
+                    return;
+                }
+            }
+            pauseTimer(); 
+            participants = [];
+            currentParticipantIndex = 0;
+            currentTime = 0;
+            colorIndex = 0; 
+            updateParticipantsList();
+            updateDisplay();
+            updateDisplayWindow(); 
+            updateControlButtons();
         }
 
         // Função para selecionar e iniciar o participante
         function selectAndStartParticipant(index) {
             if (isRunning && currentParticipantIndex === index) {
-                // Se já estiver rodando e for o mesmo participante, pause
                 pauseTimer();
             } else {
-                // Se não estiver rodando ou for outro participante, pause o atual e selecione e inicie o novo
                 if (isRunning) { 
                     pauseTimer();
                 }
-                selectParticipant(index, true); // Seleciona e inicia
+                selectParticipant(index, true); 
             }
         }
 
         // Selecionar participante (agora com opção de iniciar)
         function selectParticipant(index, shouldStart = false) {
-            // Define o status do participante anterior como 'ready' ou 'finished' se for o caso
             if (participants[currentParticipantIndex] && currentParticipantIndex !== index) {
                 if (participants[currentParticipantIndex].remainingTime > 0) {
                     participants[currentParticipantIndex].status = 'ready';
@@ -766,16 +968,16 @@
 
             currentParticipantIndex = index;
             currentTime = participants[index].remainingTime;
-            participants[currentParticipantIndex].status = 'ready'; // Marca o novo selecionado como pronto
+            participants[currentParticipantIndex].status = 'ready'; 
 
             updateDisplay();
             updateDisplayWindow();
-            updateParticipantsList(); // Para atualizar o status visual na lista
+            updateParticipantsList(); 
 
             if (shouldStart) {
                 startTimer();
             } else {
-                updateControlButtons(); // Apenas atualiza o estado dos botões se não iniciou
+                updateControlButtons(); 
             }
         }
 
@@ -796,13 +998,12 @@
                 alert('Adicione pelo menos um participante antes de iniciar.');
                 return;
             }
-            // Se nenhum participante estiver selecionado, selecione o primeiro
             if (currentParticipantIndex === undefined || currentParticipantIndex < 0 || currentParticipantIndex >= participants.length) {
                 currentParticipantIndex = 0;
                 currentTime = participants[currentParticipantIndex].remainingTime;
             }
 
-            if (isRunning && !isPaused) return; // Já está rodando e não pausado
+            if (isRunning && !isPaused) return; 
 
             isRunning = true;
             isPaused = false;
@@ -818,12 +1019,12 @@
                 }
                 updateDisplay();
                 updateDisplayWindow();
-                updateParticipantsList(); // Para atualizar o tempo na lista em tempo real
+                updateParticipantsList(); 
             }, 1000);
 
             updateDisplay();
-            updateDisplayWindow(); // Atualiza a janela de exibição imediatamente ao iniciar
-            updateControlButtons(); // Atualiza o estado dos botões de controle
+            updateDisplayWindow(); 
+            updateControlButtons(); 
         }
 
         // Pausar temporizador
@@ -835,12 +1036,12 @@
                 timerInterval = null;
             }
             if (participants[currentParticipantIndex]) {
-                participants[currentParticipantIndex].status = 'ready'; // Volta para ready ao pausar
+                participants[currentParticipantIndex].status = 'ready'; 
             }
             updateDisplay();
             updateDisplayWindow();
             updateParticipantsList();
-            updateControlButtons(); // Atualiza o estado dos botões de controle
+            updateControlButtons(); 
         }
 
         // Reset temporizador
@@ -852,23 +1053,21 @@
                 timerInterval = null;
             }
 
-            // Reset de todos os participantes para o tempo inicial e status 'ready'
             participants.forEach(participant => {
                 participant.remainingTime = participant.timeSeconds;
                 participant.status = 'ready';
             });
 
-            // Se houver participantes, o tempo atual volta para o do participante selecionado
             if (participants.length > 0) {
                 currentTime = participants[currentParticipantIndex].remainingTime;
             } else {
-                currentTime = 0; // Se não houver participantes, o tempo é 0
+                currentTime = 0; 
             }
 
             updateDisplay();
             updateDisplayWindow();
             updateParticipantsList();
-            updateControlButtons(); // Atualiza o estado dos botões de controle
+            updateControlButtons(); 
         }
 
         // Navegar participantes
@@ -876,9 +1075,8 @@
             if (participants.length === 0) return;
             
             if (isRunning) {
-                pauseTimer(); // Pausa o timer antes de mudar
+                pauseTimer(); 
             }
-            // Marca o participante atual como 'finished' se o tempo acabou, senão como 'ready'
             if (participants[currentParticipantIndex] && participants[currentParticipantIndex].remainingTime <= 0) {
                  participants[currentParticipantIndex].status = 'finished';
             } else if (participants[currentParticipantIndex]) {
@@ -887,20 +1085,19 @@
 
             currentParticipantIndex = currentParticipantIndex > 0 ? currentParticipantIndex - 1 : participants.length - 1;
             currentTime = participants[currentParticipantIndex].remainingTime;
-            participants[currentParticipantIndex].status = 'ready'; // Marca o novo selecionado como pronto
+            participants[currentParticipantIndex].status = 'ready'; 
             updateDisplay();
             updateDisplayWindow();
             updateParticipantsList();
-            updateControlButtons(); // Atualiza o estado dos botões de controle
+            updateControlButtons(); 
         }
 
         function nextParticipant() {
             if (participants.length === 0) return;
             
             if (isRunning) {
-                pauseTimer(); // Pausa o timer antes de mudar
+                pauseTimer(); 
             }
-            // Marca o participante atual como 'finished' se o tempo acabou, senão como 'ready'
             if (participants[currentParticipantIndex] && participants[currentParticipantIndex].remainingTime <= 0) {
                 participants[currentParticipantIndex].status = 'finished';
             } else if (participants[currentParticipantIndex]) {
@@ -909,18 +1106,18 @@
 
             currentParticipantIndex = (currentParticipantIndex + 1) % participants.length;
             currentTime = participants[currentParticipantIndex].remainingTime;
-            participants[currentParticipantIndex].status = 'ready'; // Marca o novo selecionado como pronto
+            participants[currentParticipantIndex].status = 'ready'; 
             updateDisplay();
             updateDisplayWindow();
             updateParticipantsList();
-            updateControlButtons(); // Atualiza o estado dos botões de controle
+            updateControlButtons(); 
         }
 
         // Ajustar tempo
         function adjustTime(seconds) {
             if (participants.length === 0) return;
             
-            currentTime = currentTime + seconds; // Agora pode ir para negativo
+            currentTime = currentTime + seconds; 
             participants[currentParticipantIndex].remainingTime = currentTime;
             updateDisplay();
             updateDisplayWindow();
@@ -929,7 +1126,6 @@
 
         // Atualizar display principal (melhorado com alertas e tempo negativo)
         function updateDisplay() {
-            // Atualizar configurações de alerta
             alertSettings.yellow = parseInt(document.getElementById('yellowAlert').value) || 0;
             alertSettings.red = parseInt(document.getElementById('redAlert').value) || 0;
             alertSettings.type = document.getElementById('alertType').value;
@@ -941,7 +1137,7 @@
             if (participants.length === 0 || currentParticipantIndex === undefined || currentParticipantIndex < 0 || currentParticipantIndex >= participants.length) {
                 speakerEl.textContent = 'Selecione um participante';
                 timeEl.textContent = '00:00';
-                timeEl.className = 'current-time'; // Reseta as classes
+                timeEl.className = 'current-time'; 
                 statusEl.textContent = 'Sessão não iniciada';
                 return;
             }
@@ -954,20 +1150,17 @@
             speakerEl.textContent = participant.name;
             timeEl.textContent = `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
             
-            // Sistema de cores baseado nos alertas configurados
-            let timeClass = 'current-time time-green'; // Default green
+            let timeClass = 'current-time time-green'; 
             if (currentTime <= alertSettings.red) {
                 timeClass = 'current-time time-red';
             } else if (currentTime <= alertSettings.yellow) {
                 timeClass = 'current-time time-yellow';
             }
-            // Se o tempo for negativo, adiciona classe específica (pode ser redundante com time-red mas mantém a flexibilidade)
             if (currentTime < 0) {
                 timeClass += ' time-negative';
             }
-            timeEl.className = timeClass; // Aplica todas as classes de uma vez
+            timeEl.className = timeClass; 
 
-            // Status
             if (isRunning) {
                 statusEl.textContent = '🔴 Em execução';
             } else if (isPaused) {
@@ -980,7 +1173,6 @@
         // Função para controlar a habilitação/desabilitação dos botões
         function updateControlButtons() {
             const hasParticipants = participants.length > 0;
-            // Verifica se há um participante selecionado e se o índice é válido
             const isCurrentlySelected = hasParticipants && currentParticipantIndex !== undefined && currentParticipantIndex >= 0 && currentParticipantIndex < participants.length;
 
             document.getElementById('startBtn').disabled = !isCurrentlySelected || isRunning;
@@ -999,22 +1191,19 @@
         // Enviar mensagem para o display externo
         function sendMessageToDisplay(message) {
             currentMessage = message;
-            updateDisplayWindow(); // Atualiza a janela do display para mostrar a mensagem
+            updateDisplayWindow(); 
         }
-
 
         // Abrir janela de display
         function openDisplayWindow() {
             if (displayWindow && !displayWindow.closed) {
                 displayWindow.focus();
-                // **NOVO**: Se a janela já está aberta, apenas atualiza seu conteúdo para garantir que está sincronizada
                 updateDisplayWindow(); 
                 return;
             }
 
             displayWindow = window.open('', 'displayWindow', 'width=1024,height=768,resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no');
             
-            // Verificar se a janela foi bloqueada pelo navegador
             if (!displayWindow) {
                 alert("O pop-up do display foi bloqueado pelo seu navegador. Por favor, permita pop-ups para este site.");
                 return;
@@ -1038,14 +1227,14 @@
                             align-items: center;
                             justify-content: center;
                             overflow: hidden;
-                            transition: background-color 0.5s ease; /* Smooth transition for background color */
-                            flex-direction: column; /* Para acomodar a mensagem */
-                            padding: 20px; /* Adicionar padding ao corpo */
+                            transition: background-color 0.5s ease; 
+                            flex-direction: column; 
+                            padding: 20px; 
                         }
                         .display-container {
                             text-align: center;
                             width: 100%;
-                            flex-grow: 1; /* Permite que o container principal ocupe o espaço restante */
+                            flex-grow: 1; 
                             display: flex;
                             flex-direction: column;
                             justify-content: center;
@@ -1077,69 +1266,65 @@
                             opacity: 0.8;
                             margin-top: 20px;
                         }
-                        /* Debate Grid Styles - Adjusted for larger default size and dynamic sizing */
                         .debate-grid {
                             display: grid;
-                            /* Min size for boxes: Start with a larger min-width, like 400px, 
-                                and adjust grid-template-columns dynamically based on participant count if needed */
-                            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); /* Aumenta o minmax */
-                            gap: 25px; /* Aumenta o espaçamento entre as caixas */
+                            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); 
+                            gap: 25px; 
                             width: 100%;
-                            max-width: 100%; /* Ajusta para preencher mais o ecrã */
-                            align-items: stretch; /* Garante que as caixas ocupem a altura disponível */
+                            max-width: 100%; 
+                            align-items: stretch; 
                             justify-content: center;
-                            flex-grow: 1; /* Permite que a grade ocupe o espaço restante */
-                            padding: 10px; /* Um pouco de padding na grade inteira */
+                            flex-grow: 1; 
+                            padding: 10px; 
                         }
                         .debate-participant {
-                            background: rgba(255,255,255,0.08); /* Fundo um pouco mais claro */
-                            border-radius: 20px; /* Bordas mais arredondadas */
-                            padding: 30px; /* Aumenta o padding interno */
+                            background: rgba(255,255,255,0.08); 
+                            border-radius: 20px; 
+                            padding: 30px; 
                             text-align: center;
-                            border: 5px solid transparent; /* Default transparent border, mais grosso */
+                            border: 5px solid transparent; 
                             transition: border-color 0.3s, background-color 0.3s, transform 0.2s;
                             display: flex;
                             flex-direction: column;
                             justify-content: space-between;
-                            min-height: 200px; /* Altura mínima maior para as caixas */
-                            box-shadow: 0 8px 20px rgba(0,0,0,0.3); /* Sombra mais pronunciada */
+                            min-height: 200px; 
+                            box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
                         }
                         .debate-participant.active {
-                            border-width: 8px; /* Borda ainda mais grossa para ativo */
-                            background: rgba(237,137,54,0.25); /* Fundo ativo mais visível */
-                            transform: scale(1.03); /* Efeito de zoom ligeiramente maior */
+                            border-width: 8px; 
+                            background: rgba(237,137,54,0.25); 
+                            transform: scale(1.03); 
                         }
                         .debate-name {
-                            font-size: 2.5rem; /* Nome maior */
-                            font-weight: 700; /* Mais bold */
-                            margin-bottom: 15px; /* Mais espaço abaixo do nome */
+                            font-size: 2.5rem; 
+                            font-weight: 700; 
+                            margin-bottom: 15px; 
                             word-break: break-word; 
                             line-height: 1.2;
                         }
                         .debate-time {
-                            font-size: 6rem; /* Tempo MUITO maior */
+                            font-size: 6rem; 
                             font-weight: 700;
                             font-family: 'Courier New', monospace;
                             flex-grow: 1; 
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            line-height: 1; /* Ajusta a linha para o tamanho da fonte */
+                            line-height: 1; 
                         }
-                        /* Estilos para a área de mensagem */
                         .message-area {
                             width: 100%;
-                            min-height: 60px; /* Espaço inicial para a mensagem um pouco maior */
-                            background-color: rgba(255, 255, 255, 0.15); /* Fundo mais visível */
-                            border-top: 3px solid #667eea; /* Borda mais grossa */
-                            padding: 20px; /* Padding maior */
+                            min-height: 60px; 
+                            background-color: rgba(255, 255, 255, 0.15); 
+                            border-top: 3px solid #667eea; 
+                            padding: 20px; 
                             text-align: center;
-                            font-size: 2rem; /* Mensagem maior */
-                            font-weight: 700; /* Mais bold */
-                            margin-top: 25px; /* Mais espaço acima */
-                            border-radius: 12px; /* Mais arredondado */
+                            font-size: 2rem; 
+                            font-weight: 700; 
+                            margin-top: 25px; 
+                            border-radius: 12px; 
                             word-wrap: break-word; 
-                            box-shadow: 0 -8px 20px rgba(0,0,0,0.3); /* Sombra mais pronunciada */
+                            box-shadow: 0 -8px 20px rgba(0,0,0,0.3); 
                         }
                     </style>
                 </head>
@@ -1161,25 +1346,20 @@
         // Atualizar janela de display
         function updateDisplayWindow() {
             if (!displayWindow || displayWindow.closed) {
-                // Se a janela estiver fechada, não tente atualizar
                 return;
             }
 
             const container = displayWindow.document.getElementById('displayContainer');
             const messageArea = displayWindow.document.getElementById('displayMessageArea');
             
-            // Pega as configurações de alerta mais recentes da janela principal
             const currentYellowAlert = parseInt(document.getElementById('yellowAlert').value) || 0;
             const currentRedAlert = parseInt(document.getElementById('redAlert').value) || 0;
             const currentAlertType = document.getElementById('alertType').value;
 
-            // Limpa o conteúdo anterior para evitar duplicação ou persistência de elementos
             container.innerHTML = '';
             
-            // Esconde/mostra a área de mensagem conforme necessário
             if (messageArea) {
                 messageArea.textContent = currentMessage;
-                // messageArea.style.display = currentMessage ? 'block' : 'none'; // Mostra apenas se há mensagem
             }
 
             if (currentMode === 'individual') {
@@ -1196,7 +1376,6 @@
                     timeClass = 'time-yellow';
                 }
 
-                // Se o tempo for negativo, adiciona time-negative class
                 if (currentTime < 0) {
                     timeClass += ' time-negative';
                 }
@@ -1207,21 +1386,19 @@
                     <div class="status-display" id="displayStatus">${isRunning ? '🔴 Em execução' : (isPaused ? '⏸️ Pausado' : '⏹️ Parado')}</div>
                 `;
                 
-                // Aplica cor de fundo baseada nas configurações de alerta e tempo atual
                 if (currentAlertType === 'background' || currentAlertType === 'both') {
                     if (currentTime <= currentRedAlert) {
-                        displayWindow.document.body.style.backgroundColor = '#4a0e0e'; // Vermelho escuro para o fundo
+                        displayWindow.document.body.style.backgroundColor = '#4a0e0e';
                     } else if (currentTime <= currentYellowAlert) {
-                        displayWindow.document.body.style.backgroundColor = '#4a320e'; // Laranja/Amarelo escuro para o fundo
+                        displayWindow.document.body.style.backgroundColor = '#4a320e';
                     } else {
-                        displayWindow.document.body.style.backgroundColor = '#1a202c'; // Fundo escuro padrão
+                        displayWindow.document.body.style.backgroundColor = '#1a202c';
                     }
                 } else {
-                    displayWindow.document.body.style.backgroundColor = '#1a202c'; // Garante o padrão se o alerta for apenas texto
+                    displayWindow.document.body.style.backgroundColor = '#1a202c';
                 }
 
             } else if (currentMode === 'debate') {
-                // Garante que a grade de debate substitui o conteúdo do modo individual
                 const debateParticipantsHtml = participants.map((participant, index) => {
                     const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
                     const displaySeconds = Math.abs(participant.remainingTime) % 60;
@@ -1255,24 +1432,25 @@
                         ${debateParticipantsHtml}
                     </div>
                 `;
-                displayWindow.document.body.style.backgroundColor = '#1a202c'; // Fundo escuro padrão para o modo debate
+                displayWindow.document.body.style.backgroundColor = '#1a202c'; 
             }
         }
 
         // Inicializa a exibição ao carregar a página
         document.addEventListener('DOMContentLoaded', () => {
+            loadSessions(); // Carrega as sessões ao iniciar
             updateParticipantsList();
             updateDisplay();
-            updateControlButtons(); // Garante que os botões estão no estado correto ao carregar
+            updateControlButtons(); 
+            updateAlertSettingsDisplay(); // Garante que os campos de alerta exibem os valores corretos ao carregar
 
-            // Adiciona o event listener para a caixa de mensagem
             const messageInput = document.getElementById('displayMessageInput');
             if (messageInput) {
                 messageInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
-                        event.preventDefault(); // Evita a quebra de linha na caixa de texto
+                        event.preventDefault(); 
                         sendMessageToDisplay(this.value);
-                        this.value = ''; // Limpa a caixa de texto
+                        this.value = ''; 
                     }
                 });
             }
