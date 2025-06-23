@@ -350,6 +350,29 @@
             justify-content: center;
         }
 
+        /* Input de mensagem */
+        .message-input-group {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+        .message-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background-color: #2d2d2d;
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .message-input::placeholder {
+            color: #aaa;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+
         @media (max-width: 1200px) {
             .main-layout {
                 grid-template-columns: 1fr;
@@ -469,6 +492,11 @@
                     <button class="btn btn-secondary" onclick="adjustTime(10)" id="adjustPlus10Btn" disabled>+10s</button>
                     <button class="btn btn-secondary" onclick="adjustTime(30)" id="adjustPlus30Btn" disabled>+30s</button>
                 </div>
+
+                <div class="message-input-group">
+                    <h3 style="color: #ffffff; margin-bottom: 10px; font-size: 1.1rem; text-align: center;">💬 Enviar Mensagem para o Ecrã</h3>
+                    <input type="text" id="displayMessageInput" class="message-input" placeholder="Carregue Enter para enviar mensagem">
+                </div>
             </div>
 
             <div class="column">
@@ -490,6 +518,8 @@
                 <div class="participants-list" id="participantsList">
                     <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
                 </div>
+
+                <button class="btn btn-danger" onclick="clearAllParticipants()" style="width: 100%; margin-top: 20px;">Limpar Lista de Participantes</button>
             </div>
         </div>
     </div>
@@ -508,6 +538,7 @@
         let currentTime = 0; // Pode ser negativo agora
         let timerInterval = null;
         let displayWindow = null;
+        let currentMessage = ""; // Para armazenar a mensagem para o display
 
         // Configurações de alerta
         let alertSettings = {
@@ -652,12 +683,27 @@
                  currentTime = participants[currentParticipantIndex].remainingTime;
             } else {
                 currentTime = 0;
+                currentParticipantIndex = 0; // Resetar índice se não há participantes
             }
 
             updateParticipantsList();
             updateDisplay();
             updateDisplayWindow();
             updateControlButtons(); // Atualiza botões de controle ao remover participante
+        }
+
+        // **NOVO** Limpar todos os participantes
+        function clearAllParticipants() {
+            if (confirm('Tem certeza que deseja remover TODOS os participantes? Esta ação não pode ser desfeita.')) {
+                pauseTimer(); // Pausa qualquer timer em execução
+                participants = [];
+                currentParticipantIndex = 0;
+                currentTime = 0;
+                updateParticipantsList();
+                updateDisplay();
+                updateDisplayWindow();
+                updateControlButtons();
+            }
         }
 
         // Função para selecionar e iniciar o participante
@@ -717,6 +763,12 @@
                 alert('Adicione pelo menos um participante antes de iniciar.');
                 return;
             }
+            // Se nenhum participante estiver selecionado, selecione o primeiro
+            if (currentParticipantIndex === undefined || currentParticipantIndex < 0 || currentParticipantIndex >= participants.length) {
+                currentParticipantIndex = 0;
+                currentTime = participants[currentParticipantIndex].remainingTime;
+            }
+
             if (isRunning && !isPaused) return; // Já está rodando e não pausado
 
             isRunning = true;
@@ -853,7 +905,7 @@
             const timeEl = document.getElementById('currentTime');
             const statusEl = document.getElementById('sessionStatus');
 
-            if (participants.length === 0 || !participants[currentParticipantIndex]) {
+            if (participants.length === 0 || currentParticipantIndex === undefined || currentParticipantIndex < 0 || currentParticipantIndex >= participants.length) {
                 speakerEl.textContent = 'Selecione um participante';
                 timeEl.textContent = '00:00';
                 timeEl.className = 'current-time'; // Reseta as classes
@@ -895,10 +947,11 @@
         // Função para controlar a habilitação/desabilitação dos botões
         function updateControlButtons() {
             const hasParticipants = participants.length > 0;
-            const isCurrentlySelected = participants.length > 0 && currentParticipantIndex !== undefined;
+            // Verifica se há um participante selecionado e se o índice é válido
+            const isCurrentlySelected = hasParticipants && currentParticipantIndex !== undefined && currentParticipantIndex >= 0 && currentParticipantIndex < participants.length;
 
-            document.getElementById('startBtn').disabled = !hasParticipants || isRunning;
-            document.getElementById('pauseBtn').disabled = !hasParticipants || !isRunning || isPaused;
+            document.getElementById('startBtn').disabled = !isCurrentlySelected || isRunning;
+            document.getElementById('pauseBtn').disabled = !isCurrentlySelected || !isRunning || isPaused;
             document.getElementById('resetBtn').disabled = !hasParticipants;
             
             document.getElementById('previousBtn').disabled = !hasParticipants;
@@ -908,6 +961,12 @@
             document.getElementById('adjustMinus10Btn').disabled = !isCurrentlySelected;
             document.getElementById('adjustPlus10Btn').disabled = !isCurrentlySelected;
             document.getElementById('adjustPlus30Btn').disabled = !isCurrentlySelected;
+        }
+
+        // **NOVO** Enviar mensagem para o display externo
+        function sendMessageToDisplay(message) {
+            currentMessage = message;
+            updateDisplayWindow(); // Atualiza a janela do display para mostrar a mensagem
         }
 
 
@@ -939,11 +998,17 @@
                             justify-content: center;
                             overflow: hidden;
                             transition: background-color 0.5s ease; /* Smooth transition for background color */
+                            flex-direction: column; /* Para acomodar a mensagem */
+                            padding: 20px; /* Adicionar padding ao corpo */
                         }
                         .display-container {
                             text-align: center;
                             width: 100%;
-                            padding: 40px;
+                            flex-grow: 1; /* Permite que o container principal ocupe o espaço restante */
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
                         }
                         .speaker-name {
                             font-size: 3rem;
@@ -958,7 +1023,7 @@
                             text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
                             margin: 0;
                             line-height: 0.8;
-                            height: 65vh;
+                            /* Remover height fixo para flex-grow funcionar */
                             display: flex;
                             align-items: center;
                             justify-content: center;
@@ -966,10 +1031,11 @@
                         .time-green { color: #48bb78; }
                         .time-yellow { color: #ed8936; }
                         .time-red { color: #f56565; }
-                        .time-negative { color: #f56565; } /* Style for negative time in display window */
+                        .time-negative { color: #f56565; }
                         .status-display {
                             font-size: 1.5rem;
                             opacity: 0.8;
+                            margin-top: 20px;
                         }
                         .debate-grid {
                             display: grid;
@@ -1000,6 +1066,21 @@
                             font-weight: 700;
                             font-family: 'Courier New', monospace;
                         }
+                        /* Estilos para a área de mensagem */
+                        .message-area {
+                            width: 100%;
+                            min-height: 50px; /* Espaço inicial para a mensagem */
+                            background-color: rgba(255, 255, 255, 0.1);
+                            border-top: 2px solid #667eea;
+                            padding: 15px;
+                            text-align: center;
+                            font-size: 1.5rem;
+                            font-weight: 600;
+                            margin-top: 20px;
+                            border-radius: 10px;
+                            word-wrap: break-word; /* Quebra de linha para palavras longas */
+                            box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+                        }
                     </style>
                 </head>
                 <body>
@@ -1008,6 +1089,7 @@
                         <div class="time-display" id="displayTime">00:00</div>
                         <div class="status-display" id="displayStatus">Sistema iniciado</div>
                     </div>
+                    <div class="message-area" id="displayMessageArea"></div>
                 </body>
                 </html>
             `);
@@ -1021,6 +1103,7 @@
             if (!displayWindow || displayWindow.closed) return;
 
             const container = displayWindow.document.getElementById('displayContainer');
+            const messageArea = displayWindow.document.getElementById('displayMessageArea');
             let contentHtml = '';
 
             // Pega as configurações de alerta mais recentes da janela principal
@@ -1104,6 +1187,11 @@
                 container.innerHTML = contentHtml;
                 displayWindow.document.body.style.backgroundColor = '#1a202c'; // Fundo escuro padrão para o modo debate
             }
+
+            // Atualiza a área de mensagem no display externo
+            if (messageArea) {
+                messageArea.textContent = currentMessage;
+            }
         }
 
         // Inicializa a exibição ao carregar a página
@@ -1111,6 +1199,18 @@
             updateParticipantsList();
             updateDisplay();
             updateControlButtons(); // Garante que os botões estão no estado correto ao carregar
+
+            // **NOVO** Adiciona o event listener para a caixa de mensagem
+            const messageInput = document.getElementById('displayMessageInput');
+            if (messageInput) {
+                messageInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault(); // Evita a quebra de linha na caixa de texto
+                        sendMessageToDisplay(this.value);
+                        this.value = ''; // Limpa a caixa de texto
+                    }
+                });
+            }
         });
     </script>
 </body>
