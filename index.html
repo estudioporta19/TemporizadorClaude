@@ -490,7 +490,7 @@ let isPaused = false;
 let currentTime = 0; // Pode ser negativo agora
 let timerInterval = null;
 let displayWindow = null;
-let participantCounter = 1; // Contador para a numeração sequencial de participantes
+// participantCounter foi removido, pois a numeração agora é dinâmica
 
 // Configurações de alerta
 let alertSettings = {
@@ -514,10 +514,13 @@ function addTime(minutes, seconds) {
     if (currentSec >= 60) {
         currentMin += Math.floor(currentSec / 60);
         currentSec = currentSec % 60;
+    } else if (currentSec < 0) { // Lidar com segundos negativos se houver no futuro, embora os botões só adicionem
+        currentMin += Math.ceil(currentSec / 60); // Arredonda para cima para minutos negativos
+        currentSec = currentSec % 60 + 60; // Ajusta segundos para positivo
     }
     
-    minField.value = currentMin;
-    secField.value = currentSec;
+    minField.value = Math.max(0, currentMin); // Garante que minutos não fiquem negativos na UI
+    secField.value = Math.max(0, currentSec); // Garante que segundos não fiquem negativos na UI
 }
 
 // Limpar campos de tempo
@@ -526,14 +529,15 @@ function clearTime() {
     document.getElementById('participantSeconds').value = '0';
 }
 
-// Adicionar participante (atualizado)
+// Adicionar participante (Atualizado para numeração sequencial sem lacunas)
 function addParticipant() {
     let name = document.getElementById('participantName').value.trim();
     const minutes = parseInt(document.getElementById('participantMinutes').value) || 0;
     const seconds = parseInt(document.getElementById('participantSeconds').value) || 0;
 
-    if (minutes === 0 && seconds === 0 && name) { // Permite adicionar participante sem tempo se não for nome auto-gerado
-         alert('Por favor, defina um tempo para o participante, ou deixe o nome vazio para auto-gerar com o tempo padrão.');
+    // Validação para evitar adicionar participante sem tempo e sem nome personalizado
+    if (minutes === 0 && seconds === 0 && !name) {
+         alert('Por favor, defina um tempo para o participante, ou insira um nome para auto-gerar o tempo padrão (00:00).');
          return;
     }
     if (minutes < 0 || seconds < 0) {
@@ -541,17 +545,34 @@ function addParticipant() {
         return;
     }
 
+    // Lógica para encontrar o próximo número sequencial disponível
+    let nextParticipantNumber = 1;
+    // Pega todos os números de participantes auto-gerados atualmente na lista
+    const existingNumbers = participants
+        .filter(p => p.name.startsWith('Participante '))
+        .map(p => parseInt(p.name.replace('Participante ', '')))
+        .filter(num => !isNaN(num)) // Filtra quaisquer NaNs
+        .sort((a, b) => a - b); // Ordena para encontrar a lacuna
 
-    // Auto-gerar nome se vazio, usando o participantCounter para numeração sequencial
-    if (!name) {
-        name = `Participante ${participantCounter}`;
+    // Encontra a primeira lacuna ou o próximo número
+    for (let i = 0; i < existingNumbers.length; i++) {
+        if (existingNumbers[i] === nextParticipantNumber) {
+            nextParticipantNumber++;
+        } else {
+            // Encontrou uma lacuna, usa este número
+            break;
+        }
     }
-    participantCounter++; // Sempre incrementa o contador para o próximo participante
+
+    // Auto-gerar nome se vazio, usando o nextParticipantNumber
+    if (!name) {
+        name = `Participante ${nextParticipantNumber}`;
+    }
 
     const totalSeconds = (minutes * 60) + seconds;
 
     const participant = {
-        id: Date.now(),
+        id: Date.now(), // Continua usando Date.now() para um ID único interno
         name: name,
         timeMinutes: minutes,
         timeSeconds: totalSeconds,
@@ -564,7 +585,7 @@ function addParticipant() {
     
     // Limpar campos de nome e tempo após adicionar
     document.getElementById('participantName').value = '';
-    document.getElementById('participantMinutes').value = '0'; // Agora não volta para 5 minutos
+    document.getElementById('participantMinutes').value = '0';
     document.getElementById('participantSeconds').value = '0';
 }
 
@@ -611,6 +632,7 @@ function removeParticipant(index) {
     if (currentParticipantIndex >= participants.length) {
         currentParticipantIndex = Math.max(0, participants.length - 1);
     }
+    // Se não há mais participantes, resetar o tempo
     if (participants.length > 0) {
          currentTime = participants[currentParticipantIndex].remainingTime;
     } else {
@@ -664,7 +686,7 @@ function startTimer() {
         alert('Adicione pelo menos um participante antes de iniciar.');
         return;
     }
-    if (isRunning && !isPaused) return; // Já está rodando
+    if (isRunning && !isPaused) return; // Já está rodando ou já está pausado
 
     isRunning = true;
     isPaused = false;
@@ -799,7 +821,7 @@ function updateDisplay() {
     if (participants.length === 0 || !participants[currentParticipantIndex]) {
         speakerEl.textContent = 'Selecione um participante';
         timeEl.textContent = '00:00';
-        timeEl.className = 'current-time';
+        timeEl.className = 'current-time'; // Reseta as classes
         statusEl.textContent = 'Sessão não iniciada';
         return;
     }
@@ -813,20 +835,17 @@ function updateDisplay() {
     timeEl.textContent = `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
     
     // Sistema de cores baseado nos alertas configurados
+    let timeClass = 'current-time time-green'; // Default green
     if (currentTime <= alertSettings.red) {
-        timeEl.className = 'current-time time-red';
+        timeClass = 'current-time time-red';
     } else if (currentTime <= alertSettings.yellow) {
-        timeEl.className = 'current-time time-yellow';
-    } else {
-        timeEl.className = 'current-time time-green';
+        timeClass = 'current-time time-yellow';
     }
-
     // Se o tempo for negativo, adiciona classe específica (pode ser redundante com time-red mas mantém a flexibilidade)
     if (currentTime < 0) {
-        timeEl.classList.add('time-negative');
-    } else {
-        timeEl.classList.remove('time-negative');
+        timeClass += ' time-negative';
     }
+    timeEl.className = timeClass; // Aplica todas as classes de uma vez
 
     // Status
     if (isRunning) {
@@ -950,7 +969,7 @@ function updateDisplayWindow() {
     const container = displayWindow.document.getElementById('displayContainer');
     let contentHtml = '';
 
-    // Get alert settings from the main window's input fields
+    // Pega as configurações de alerta mais recentes da janela principal
     const currentYellowAlert = parseInt(document.getElementById('yellowAlert').value) || 0;
     const currentRedAlert = parseInt(document.getElementById('redAlert').value) || 0;
     const currentAlertType = document.getElementById('alertType').value;
@@ -969,7 +988,7 @@ function updateDisplayWindow() {
             timeClass = 'time-yellow';
         }
 
-        // If time is negative, add time-negative class
+        // Se o tempo for negativo, adiciona time-negative class
         if (currentTime < 0) {
             timeClass += ' time-negative';
         }
@@ -981,17 +1000,17 @@ function updateDisplayWindow() {
         `;
         container.innerHTML = contentHtml;
 
-        // Apply background color based on alert settings and current time
+        // Aplica cor de fundo baseada nas configurações de alerta e tempo atual
         if (currentAlertType === 'background' || currentAlertType === 'both') {
             if (currentTime <= currentRedAlert) {
-                displayWindow.document.body.style.backgroundColor = '#4a0e0e'; // Dark red for background
+                displayWindow.document.body.style.backgroundColor = '#4a0e0e'; // Vermelho escuro para o fundo
             } else if (currentTime <= currentYellowAlert) {
-                displayWindow.document.body.style.backgroundColor = '#4a320e'; // Dark orange/yellow for background
+                displayWindow.document.body.style.backgroundColor = '#4a320e'; // Laranja/Amarelo escuro para o fundo
             } else {
-                displayWindow.document.body.style.backgroundColor = '#1a202c'; // Default dark background
+                displayWindow.document.body.style.backgroundColor = '#1a202c'; // Fundo escuro padrão
             }
         } else {
-            displayWindow.document.body.style.backgroundColor = '#1a202c'; // Ensure default if only text alert
+            displayWindow.document.body.style.backgroundColor = '#1a202c'; // Garante o padrão se o alerta for apenas texto
         }
 
     } else if (currentMode === 'debate') {
@@ -1029,13 +1048,13 @@ function updateDisplayWindow() {
             </div>
         `;
         container.innerHTML = contentHtml;
-        displayWindow.document.body.style.backgroundColor = '#1a202c'; // Default dark background for debate mode
+        displayWindow.document.body.style.backgroundColor = '#1a202c'; // Fundo escuro padrão para o modo debate
     }
 }
 
 // Inicializa a exibição ao carregar a página
 document.addEventListener('DOMContentLoaded', () => {
-    // document.getElementById('participantMinutes').value = '5'; // Removida esta linha
+    // Não preenchemos o campo de minutos automaticamente, ele fica em 0 por padrão.
     updateParticipantsList();
     updateDisplay();
 });
