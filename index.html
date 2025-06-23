@@ -664,6 +664,7 @@
             document.getElementById('participantSeconds').value = '0';
 
             updateControlButtons(); // Atualiza botões de controle ao adicionar participante
+            updateDisplayWindow(); // **NOVO**: Atualiza a janela de display para refletir novos participantes
         }
 
         // Atualizar lista de participantes (com botão "Iniciar" e ícone de remover)
@@ -719,7 +720,7 @@
 
             updateParticipantsList();
             updateDisplay();
-            updateDisplayWindow();
+            updateDisplayWindow(); // **NOVO**: Atualiza a janela de display para refletir a remoção
             updateControlButtons(); // Atualiza botões de controle ao remover participante
         }
 
@@ -733,7 +734,7 @@
                 colorIndex = 0; // Resetar o índice de cores também
                 updateParticipantsList();
                 updateDisplay();
-                updateDisplayWindow();
+                updateDisplayWindow(); // **NOVO**: Atualiza a janela de display para refletir a limpeza
                 updateControlButtons();
             }
         }
@@ -1006,11 +1007,19 @@
         function openDisplayWindow() {
             if (displayWindow && !displayWindow.closed) {
                 displayWindow.focus();
+                // **NOVO**: Se a janela já está aberta, apenas atualiza seu conteúdo para garantir que está sincronizada
+                updateDisplayWindow(); 
                 return;
             }
 
-            displayWindow = window.open('', 'displayWindow', 'width=800,height=600,resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no');
+            displayWindow = window.open('', 'displayWindow', 'width=1024,height=768,resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no');
             
+            // Verificar se a janela foi bloqueada pelo navegador
+            if (!displayWindow) {
+                alert("O pop-up do display foi bloqueado pelo seu navegador. Por favor, permita pop-ups para este site.");
+                return;
+            }
+
             displayWindow.document.write(`
                 <!DOCTYPE html>
                 <html lang="pt">
@@ -1055,7 +1064,6 @@
                             text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
                             margin: 0;
                             line-height: 0.8;
-                            /* Remover height fixo para flex-grow funcionar */
                             display: flex;
                             align-items: center;
                             justify-content: center;
@@ -1069,62 +1077,69 @@
                             opacity: 0.8;
                             margin-top: 20px;
                         }
-                        /* Debate Grid Styles - Adjusted for dynamic sizing */
+                        /* Debate Grid Styles - Adjusted for larger default size and dynamic sizing */
                         .debate-grid {
                             display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Min size for boxes */
-                            gap: 20px;
+                            /* Min size for boxes: Start with a larger min-width, like 400px, 
+                                and adjust grid-template-columns dynamically based on participant count if needed */
+                            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); /* Aumenta o minmax */
+                            gap: 25px; /* Aumenta o espaçamento entre as caixas */
                             width: 100%;
-                            max-width: 1200px;
-                            align-items: start; /* Align items to the start of their grid area */
+                            max-width: 100%; /* Ajusta para preencher mais o ecrã */
+                            align-items: stretch; /* Garante que as caixas ocupem a altura disponível */
                             justify-content: center;
+                            flex-grow: 1; /* Permite que a grade ocupe o espaço restante */
+                            padding: 10px; /* Um pouco de padding na grade inteira */
                         }
                         .debate-participant {
-                            background: rgba(255,255,255,0.1);
-                            border-radius: 15px;
-                            padding: 20px;
+                            background: rgba(255,255,255,0.08); /* Fundo um pouco mais claro */
+                            border-radius: 20px; /* Bordas mais arredondadas */
+                            padding: 30px; /* Aumenta o padding interno */
                             text-align: center;
-                            border: 3px solid transparent; /* Default transparent border */
+                            border: 5px solid transparent; /* Default transparent border, mais grosso */
                             transition: border-color 0.3s, background-color 0.3s, transform 0.2s;
                             display: flex;
                             flex-direction: column;
                             justify-content: space-between;
-                            min-height: 150px; /* Minimum height for better appearance */
+                            min-height: 200px; /* Altura mínima maior para as caixas */
+                            box-shadow: 0 8px 20px rgba(0,0,0,0.3); /* Sombra mais pronunciada */
                         }
                         .debate-participant.active {
-                            border-width: 5px; /* Thicker border for active participant */
-                            background: rgba(237,137,54,0.2); /* Example active background, can be adjusted */
-                            transform: scale(1.02); /* Slightly enlarge active participant */
+                            border-width: 8px; /* Borda ainda mais grossa para ativo */
+                            background: rgba(237,137,54,0.25); /* Fundo ativo mais visível */
+                            transform: scale(1.03); /* Efeito de zoom ligeiramente maior */
                         }
                         .debate-name {
-                            font-size: 1.6rem; /* Slightly larger font */
-                            font-weight: 600;
-                            margin-bottom: 10px;
-                            word-break: break-word; /* Ensure long names break correctly */
+                            font-size: 2.5rem; /* Nome maior */
+                            font-weight: 700; /* Mais bold */
+                            margin-bottom: 15px; /* Mais espaço abaixo do nome */
+                            word-break: break-word; 
+                            line-height: 1.2;
                         }
                         .debate-time {
-                            font-size: 2.8rem; /* Slightly larger font */
+                            font-size: 6rem; /* Tempo MUITO maior */
                             font-weight: 700;
                             font-family: 'Courier New', monospace;
-                            flex-grow: 1; /* Allows time to take up available space */
+                            flex-grow: 1; 
                             display: flex;
                             align-items: center;
                             justify-content: center;
+                            line-height: 1; /* Ajusta a linha para o tamanho da fonte */
                         }
                         /* Estilos para a área de mensagem */
                         .message-area {
                             width: 100%;
-                            min-height: 50px; /* Espaço inicial para a mensagem */
-                            background-color: rgba(255, 255, 255, 0.1);
-                            border-top: 2px solid #667eea;
-                            padding: 15px;
+                            min-height: 60px; /* Espaço inicial para a mensagem um pouco maior */
+                            background-color: rgba(255, 255, 255, 0.15); /* Fundo mais visível */
+                            border-top: 3px solid #667eea; /* Borda mais grossa */
+                            padding: 20px; /* Padding maior */
                             text-align: center;
-                            font-size: 1.5rem;
-                            font-weight: 600;
-                            margin-top: 20px;
-                            border-radius: 10px;
-                            word-wrap: break-word; /* Quebra de linha para palavras longas */
-                            box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+                            font-size: 2rem; /* Mensagem maior */
+                            font-weight: 700; /* Mais bold */
+                            margin-top: 25px; /* Mais espaço acima */
+                            border-radius: 12px; /* Mais arredondado */
+                            word-wrap: break-word; 
+                            box-shadow: 0 -8px 20px rgba(0,0,0,0.3); /* Sombra mais pronunciada */
                         }
                     </style>
                 </head>
@@ -1145,16 +1160,27 @@
 
         // Atualizar janela de display
         function updateDisplayWindow() {
-            if (!displayWindow || displayWindow.closed) return;
+            if (!displayWindow || displayWindow.closed) {
+                // Se a janela estiver fechada, não tente atualizar
+                return;
+            }
 
             const container = displayWindow.document.getElementById('displayContainer');
             const messageArea = displayWindow.document.getElementById('displayMessageArea');
-            let contentHtml = '';
-
+            
             // Pega as configurações de alerta mais recentes da janela principal
             const currentYellowAlert = parseInt(document.getElementById('yellowAlert').value) || 0;
             const currentRedAlert = parseInt(document.getElementById('redAlert').value) || 0;
             const currentAlertType = document.getElementById('alertType').value;
+
+            // Limpa o conteúdo anterior para evitar duplicação ou persistência de elementos
+            container.innerHTML = '';
+            
+            // Esconde/mostra a área de mensagem conforme necessário
+            if (messageArea) {
+                messageArea.textContent = currentMessage;
+                // messageArea.style.display = currentMessage ? 'block' : 'none'; // Mostra apenas se há mensagem
+            }
 
             if (currentMode === 'individual') {
                 const participant = participants[currentParticipantIndex];
@@ -1175,13 +1201,12 @@
                     timeClass += ' time-negative';
                 }
 
-                contentHtml = `
+                container.innerHTML = `
                     <div class="speaker-name" id="displaySpeaker">${participant ? participant.name : 'Aguardando...'}</div>
                     <div class="time-display ${timeClass}" id="displayTime">${participant ? `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}` : '00:00'}</div>
                     <div class="status-display" id="displayStatus">${isRunning ? '🔴 Em execução' : (isPaused ? '⏸️ Pausado' : '⏹️ Parado')}</div>
                 `;
-                container.innerHTML = contentHtml;
-
+                
                 // Aplica cor de fundo baseada nas configurações de alerta e tempo atual
                 if (currentAlertType === 'background' || currentAlertType === 'both') {
                     if (currentTime <= currentRedAlert) {
@@ -1196,12 +1221,7 @@
                 }
 
             } else if (currentMode === 'debate') {
-                // Esconde os elementos do modo individual no modo debate
-                if (container.querySelector('#displaySpeaker')) container.querySelector('#displaySpeaker').style.display = 'none';
-                if (container.querySelector('#displayTime')) container.querySelector('#displayTime').style.display = 'none';
-                if (container.querySelector('#displayStatus')) container.querySelector('#displayStatus').style.display = 'none';
-
-
+                // Garante que a grade de debate substitui o conteúdo do modo individual
                 const debateParticipantsHtml = participants.map((participant, index) => {
                     const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
                     const displaySeconds = Math.abs(participant.remainingTime) % 60;
@@ -1230,19 +1250,12 @@
                     `;
                 }).join('');
 
-                contentHtml = `
+                container.innerHTML = `
                     <div class="debate-grid">
                         ${debateParticipantsHtml}
                     </div>
                 `;
-                // Atualiza o conteúdo do container
-                container.innerHTML = contentHtml;
                 displayWindow.document.body.style.backgroundColor = '#1a202c'; // Fundo escuro padrão para o modo debate
-            }
-
-            // Atualiza a área de mensagem no display externo
-            if (messageArea) {
-                messageArea.textContent = currentMessage;
             }
         }
 
