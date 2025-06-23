@@ -481,564 +481,564 @@
     </button>
 
     <script>
-        // Estado da aplicação
-        let participants = [];
-        let currentParticipantIndex = 0;
-        let currentMode = 'individual';
-        let isRunning = false;
-        let isPaused = false;
-        let currentTime = 0; // Pode ser negativo agora
-        let timerInterval = null;
-        let displayWindow = null;
-        let participantCounter = 1;
+// Estado da aplicação
+let participants = [];
+let currentParticipantIndex = 0;
+let currentMode = 'individual';
+let isRunning = false;
+let isPaused = false;
+let currentTime = 0; // Pode ser negativo agora
+let timerInterval = null;
+let displayWindow = null;
+let participantCounter = 1; // Contador para a numeração sequencial de participantes
 
-        // Configurações de alerta
-        let alertSettings = {
-            yellow: 60,
-            red: 30,
-            type: 'text'
-        };
+// Configurações de alerta
+let alertSettings = {
+    yellow: 60,
+    red: 30,
+    type: 'text'
+};
 
-        // Adicionar tempo aos campos
-        function addTime(minutes, seconds) {
-            const minField = document.getElementById('participantMinutes');
-            const secField = document.getElementById('participantSeconds');
-            
-            let currentMin = parseInt(minField.value) || 0;
-            let currentSec = parseInt(secField.value) || 0;
-            
-            currentMin += minutes;
-            currentSec += seconds;
-            
-            // Converter segundos em minutos se necessário
-            if (currentSec >= 60) {
-                currentMin += Math.floor(currentSec / 60);
-                currentSec = currentSec % 60;
-            }
-            
-            minField.value = currentMin;
-            secField.value = currentSec;
+// Adicionar tempo aos campos
+function addTime(minutes, seconds) {
+    const minField = document.getElementById('participantMinutes');
+    const secField = document.getElementById('participantSeconds');
+    
+    let currentMin = parseInt(minField.value) || 0;
+    let currentSec = parseInt(secField.value) || 0;
+    
+    currentMin += minutes;
+    currentSec += seconds;
+    
+    // Converter segundos em minutos se necessário
+    if (currentSec >= 60) {
+        currentMin += Math.floor(currentSec / 60);
+        currentSec = currentSec % 60;
+    }
+    
+    minField.value = currentMin;
+    secField.value = currentSec;
+}
+
+// Limpar campos de tempo
+function clearTime() {
+    document.getElementById('participantMinutes').value = '0';
+    document.getElementById('participantSeconds').value = '0';
+}
+
+// Adicionar participante (atualizado)
+function addParticipant() {
+    let name = document.getElementById('participantName').value.trim();
+    const minutes = parseInt(document.getElementById('participantMinutes').value) || 0;
+    const seconds = parseInt(document.getElementById('participantSeconds').value) || 0;
+
+    if (minutes === 0 && seconds === 0 && name) { // Permite adicionar participante sem tempo se não for nome auto-gerado
+         alert('Por favor, defina um tempo para o participante, ou deixe o nome vazio para auto-gerar com o tempo padrão.');
+         return;
+    }
+    if (minutes < 0 || seconds < 0) {
+        alert('Os minutos e segundos não podem ser negativos.');
+        return;
+    }
+
+
+    // Auto-gerar nome se vazio, usando o participantCounter para numeração sequencial
+    if (!name) {
+        name = `Participante ${participantCounter}`;
+    }
+    participantCounter++; // Sempre incrementa o contador para o próximo participante
+
+    const totalSeconds = (minutes * 60) + seconds;
+
+    const participant = {
+        id: Date.now(),
+        name: name,
+        timeMinutes: minutes,
+        timeSeconds: totalSeconds,
+        remainingTime: totalSeconds,
+        status: 'ready'
+    };
+
+    participants.push(participant);
+    updateParticipantsList();
+    
+    // Limpar campos de nome e tempo após adicionar
+    document.getElementById('participantName').value = '';
+    document.getElementById('participantMinutes').value = '0'; // Agora não volta para 5 minutos
+    document.getElementById('participantSeconds').value = '0';
+}
+
+// Atualizar lista de participantes
+function updateParticipantsList() {
+    const list = document.getElementById('participantsList');
+    
+    if (participants.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>';
+        return;
+    }
+
+    list.innerHTML = participants.map((participant, index) => {
+        const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
+        const displaySeconds = Math.abs(participant.remainingTime) % 60;
+        const sign = participant.remainingTime < 0 ? '-' : '';
+
+        return `
+            <div class="participant-item">
+                <div class="participant-info">
+                    <span class="status-indicator status-${participant.status}"></span>
+                    <span class="participant-name">${participant.name}</span>
+                    <span class="participant-time">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</span>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="selectParticipant(${index})" style="padding: 5px 10px; font-size: 12px;">Selecionar</button>
+                    <button class="btn btn-danger" onclick="removeParticipant(${index})" style="padding: 5px 10px; font-size: 12px;">Remover</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Remover participante
+function removeParticipant(index) {
+    // Se o participante removido for o ativo, pare o timer
+    if (index === currentParticipantIndex && isRunning) {
+        pauseTimer();
+    }
+
+    participants.splice(index, 1);
+    
+    // Ajustar o índice do participante atual se o removido era o ativo ou um antes
+    if (currentParticipantIndex >= participants.length) {
+        currentParticipantIndex = Math.max(0, participants.length - 1);
+    }
+    if (participants.length > 0) {
+         currentTime = participants[currentParticipantIndex].remainingTime;
+    } else {
+        currentTime = 0;
+    }
+
+    updateParticipantsList();
+    updateDisplay();
+    updateDisplayWindow();
+}
+
+// Selecionar participante
+function selectParticipant(index) {
+    if (isRunning) {
+        pauseTimer(); // Pausa o timer se estiver rodando antes de selecionar outro
+    }
+    // Define o status do participante anterior como 'ready' ou 'finished' se for o caso
+    if (participants[currentParticipantIndex] && currentParticipantIndex !== index) {
+        if (participants[currentParticipantIndex].remainingTime > 0) {
+            participants[currentParticipantIndex].status = 'ready';
+        } else {
+            participants[currentParticipantIndex].status = 'finished';
         }
-
-        // Limpar campos de tempo
-        function clearTime() {
-            document.getElementById('participantMinutes').value = '0';
-            document.getElementById('participantSeconds').value = '0';
-        }
-
-        // Adicionar participante (atualizado)
-        function addParticipant() {
-            let name = document.getElementById('participantName').value.trim();
-            const minutes = parseInt(document.getElementById('participantMinutes').value) || 0;
-            const seconds = parseInt(document.getElementById('participantSeconds').value) || 0;
-
-            if (minutes === 0 && seconds === 0 && name) { // Permite adicionar participante sem tempo se não for nome auto-gerado
-                 alert('Por favor, defina um tempo para o participante, ou deixe o nome vazio para auto-gerar com o tempo padrão.');
-                 return;
-            }
-            if (minutes < 0 || seconds < 0) {
-                alert('Os minutos e segundos não podem ser negativos.');
-                return;
-            }
+    }
 
 
-            // Auto-gerar nome se vazio
-            if (!name) {
-                name = `Participante ${participantCounter}`;
-                participantCounter++;
-            }
+    currentParticipantIndex = index;
+    currentTime = participants[index].remainingTime;
+    participants[currentParticipantIndex].status = 'ready'; // Marca o novo selecionado como pronto
 
-            const totalSeconds = (minutes * 60) + seconds;
+    updateDisplay();
+    updateDisplayWindow();
+    updateParticipantsList(); // Para atualizar o status visual na lista
+}
 
-            const participant = {
-                id: Date.now(),
-                name: name,
-                timeMinutes: minutes,
-                timeSeconds: totalSeconds,
-                remainingTime: totalSeconds,
-                status: 'ready'
-            };
+// Definir modo
+function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    // `event.target` pode ser o span ou strong dentro do botão, então subimos para pegar o `mode-btn`
+    const clickedButton = event.target.closest('.mode-btn'); 
+    if (clickedButton) {
+        clickedButton.classList.add('active');
+    }
+    updateDisplayWindow();
+}
 
-            participants.push(participant);
-            updateParticipantsList();
-            
-            // Limpar campos e redefinir tempo para 5 minutos
-            document.getElementById('participantName').value = '';
-            document.getElementById('participantMinutes').value = '5';
-            document.getElementById('participantSeconds').value = '0';
-        }
+// Iniciar temporizador
+function startTimer() {
+    if (participants.length === 0) {
+        alert('Adicione pelo menos um participante antes de iniciar.');
+        return;
+    }
+    if (isRunning && !isPaused) return; // Já está rodando
 
-        // Atualizar lista de participantes
-        function updateParticipantsList() {
-            const list = document.getElementById('participantsList');
-            
-            if (participants.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>';
-                return;
-            }
+    isRunning = true;
+    isPaused = false;
+    
+    if (participants[currentParticipantIndex]) {
+        participants[currentParticipantIndex].status = 'active';
+    }
 
-            list.innerHTML = participants.map((participant, index) => {
-                const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
-                const displaySeconds = Math.abs(participant.remainingTime) % 60;
-                const sign = participant.remainingTime < 0 ? '-' : '';
-
-                return `
-                    <div class="participant-item">
-                        <div class="participant-info">
-                            <span class="status-indicator status-${participant.status}"></span>
-                            <span class="participant-name">${participant.name}</span>
-                            <span class="participant-time">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</span>
-                        </div>
-                        <div>
-                            <button class="btn btn-primary" onclick="selectParticipant(${index})" style="padding: 5px 10px; font-size: 12px;">Selecionar</button>
-                            <button class="btn btn-danger" onclick="removeParticipant(${index})" style="padding: 5px 10px; font-size: 12px;">Remover</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Remover participante
-        function removeParticipant(index) {
-            // Se o participante removido for o ativo, pare o timer
-            if (index === currentParticipantIndex && isRunning) {
-                pauseTimer();
-            }
-
-            participants.splice(index, 1);
-            
-            // Ajustar o índice do participante atual se o removido era o ativo ou um antes
-            if (currentParticipantIndex >= participants.length) {
-                currentParticipantIndex = Math.max(0, participants.length - 1);
-            }
-            if (participants.length > 0) {
-                 currentTime = participants[currentParticipantIndex].remainingTime;
-            } else {
-                currentTime = 0;
-            }
-
-            updateParticipantsList();
-            updateDisplay();
-            updateDisplayWindow();
-        }
-
-        // Selecionar participante
-        function selectParticipant(index) {
-            if (isRunning) {
-                pauseTimer(); // Pausa o timer se estiver rodando antes de selecionar outro
-            }
-            // Define o status do participante anterior como 'ready' ou 'finished' se for o caso
-            if (participants[currentParticipantIndex] && currentParticipantIndex !== index) {
-                if (participants[currentParticipantIndex].remainingTime > 0) {
-                    participants[currentParticipantIndex].status = 'ready';
-                } else {
-                    participants[currentParticipantIndex].status = 'finished';
-                }
-            }
-
-
-            currentParticipantIndex = index;
-            currentTime = participants[index].remainingTime;
-            participants[currentParticipantIndex].status = 'ready'; // Marca o novo selecionado como pronto
-
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList(); // Para atualizar o status visual na lista
-        }
-
-        // Definir modo
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            // `event.target` pode ser o span ou strong dentro do botão, então subimos para pegar o `mode-btn`
-            const clickedButton = event.target.closest('.mode-btn'); 
-            if (clickedButton) {
-                clickedButton.classList.add('active');
-            }
-            updateDisplayWindow();
-        }
-
-        // Iniciar temporizador
-        function startTimer() {
-            if (participants.length === 0) {
-                alert('Adicione pelo menos um participante antes de iniciar.');
-                return;
-            }
-            if (isRunning && !isPaused) return; // Já está rodando
-
-            isRunning = true;
-            isPaused = false;
-            
-            if (participants[currentParticipantIndex]) {
-                participants[currentParticipantIndex].status = 'active';
-            }
-
-            timerInterval = setInterval(() => {
-                currentTime--;
-                if (participants[currentParticipantIndex]) {
-                    participants[currentParticipantIndex].remainingTime = currentTime;
-                }
-                updateDisplay();
-                updateDisplayWindow();
-                updateParticipantsList(); // Para atualizar o tempo na lista em tempo real
-            }, 1000);
-
-            updateDisplay();
-            updateDisplayWindow(); // Atualiza a janela de exibição imediatamente ao iniciar
-        }
-
-        // Pausar temporizador
-        function pauseTimer() {
-            isRunning = false;
-            isPaused = true;
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            if (participants[currentParticipantIndex]) {
-                participants[currentParticipantIndex].status = 'ready'; // Volta para ready ao pausar
-            }
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
-        }
-
-        // Reset temporizador
-        function resetTimer() {
-            isRunning = false;
-            isPaused = false;
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-
-            // Reset de todos os participantes para o tempo inicial e status 'ready'
-            participants.forEach(participant => {
-                participant.remainingTime = participant.timeSeconds;
-                participant.status = 'ready';
-            });
-
-            // Se houver participantes, o tempo atual volta para o do participante selecionado
-            if (participants.length > 0) {
-                currentTime = participants[currentParticipantIndex].remainingTime;
-            } else {
-                currentTime = 0; // Se não houver participantes, o tempo é 0
-            }
-
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
-        }
-
-        // Navegar participantes
-        function previousParticipant() {
-            if (participants.length === 0) return;
-            
-            if (isRunning) {
-                pauseTimer(); // Pausa o timer antes de mudar
-            }
-            // Marca o participante atual como 'finished' se o tempo acabou, senão como 'ready'
-            if (participants[currentParticipantIndex] && participants[currentParticipantIndex].remainingTime <= 0) {
-                 participants[currentParticipantIndex].status = 'finished';
-            } else if (participants[currentParticipantIndex]) {
-                 participants[currentParticipantIndex].status = 'ready';
-            }
-
-
-            currentParticipantIndex = currentParticipantIndex > 0 ? currentParticipantIndex - 1 : participants.length - 1;
-            currentTime = participants[currentParticipantIndex].remainingTime;
-            participants[currentParticipantIndex].status = 'ready'; // Marca o novo selecionado como pronto
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
-        }
-
-        function nextParticipant() {
-            if (participants.length === 0) return;
-            
-            if (isRunning) {
-                pauseTimer(); // Pausa o timer antes de mudar
-            }
-            // Marca o participante atual como 'finished' se o tempo acabou, senão como 'ready'
-            if (participants[currentParticipantIndex] && participants[currentParticipantIndex].remainingTime <= 0) {
-                participants[currentParticipantIndex].status = 'finished';
-            } else if (participants[currentParticipantIndex]) {
-                participants[currentParticipantIndex].status = 'ready';
-            }
-
-            currentParticipantIndex = (currentParticipantIndex + 1) % participants.length;
-            currentTime = participants[currentParticipantIndex].remainingTime;
-            participants[currentParticipantIndex].status = 'ready'; // Marca o novo selecionado como pronto
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
-        }
-
-        // Ajustar tempo
-        function adjustTime(seconds) {
-            if (participants.length === 0) return;
-            
-            currentTime = currentTime + seconds; // Agora pode ir para negativo
+    timerInterval = setInterval(() => {
+        currentTime--;
+        if (participants[currentParticipantIndex]) {
             participants[currentParticipantIndex].remainingTime = currentTime;
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
         }
+        updateDisplay();
+        updateDisplayWindow();
+        updateParticipantsList(); // Para atualizar o tempo na lista em tempo real
+    }, 1000);
 
-        // Atualizar display principal (melhorado com alertas e tempo negativo)
-        function updateDisplay() {
-            // Atualizar configurações de alerta
-            alertSettings.yellow = parseInt(document.getElementById('yellowAlert').value) || 0;
-            alertSettings.red = parseInt(document.getElementById('redAlert').value) || 0;
-            alertSettings.type = document.getElementById('alertType').value;
+    updateDisplay();
+    updateDisplayWindow(); // Atualiza a janela de exibição imediatamente ao iniciar
+}
 
-            const speakerEl = document.getElementById('currentSpeaker');
-            const timeEl = document.getElementById('currentTime');
-            const statusEl = document.getElementById('sessionStatus');
+// Pausar temporizador
+function pauseTimer() {
+    isRunning = false;
+    isPaused = true;
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    if (participants[currentParticipantIndex]) {
+        participants[currentParticipantIndex].status = 'ready'; // Volta para ready ao pausar
+    }
+    updateDisplay();
+    updateDisplayWindow();
+    updateParticipantsList();
+}
 
-            if (participants.length === 0 || !participants[currentParticipantIndex]) {
-                speakerEl.textContent = 'Selecione um participante';
-                timeEl.textContent = '00:00';
-                timeEl.className = 'current-time';
-                statusEl.textContent = 'Sessão não iniciada';
-                return;
-            }
+// Reset temporizador
+function resetTimer() {
+    isRunning = false;
+    isPaused = false;
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
 
-            const participant = participants[currentParticipantIndex];
-            const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
-            const displaySeconds = Math.abs(currentTime) % 60;
-            const sign = currentTime < 0 ? '-' : '';
-            
-            speakerEl.textContent = participant.name;
-            timeEl.textContent = `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
-            
-            // Sistema de cores baseado nos alertas configurados
-            if (currentTime <= alertSettings.red) {
-                timeEl.className = 'current-time time-red';
-            } else if (currentTime <= alertSettings.yellow) {
-                timeEl.className = 'current-time time-yellow';
-            } else {
-                timeEl.className = 'current-time time-green';
-            }
+    // Reset de todos os participantes para o tempo inicial e status 'ready'
+    participants.forEach(participant => {
+        participant.remainingTime = participant.timeSeconds;
+        participant.status = 'ready';
+    });
 
-            // Se o tempo for negativo, adiciona classe específica (pode ser redundante com time-red mas mantém a flexibilidade)
-            if (currentTime < 0) {
-                timeEl.classList.add('time-negative');
-            } else {
-                timeEl.classList.remove('time-negative');
-            }
+    // Se houver participantes, o tempo atual volta para o do participante selecionado
+    if (participants.length > 0) {
+        currentTime = participants[currentParticipantIndex].remainingTime;
+    } else {
+        currentTime = 0; // Se não houver participantes, o tempo é 0
+    }
 
-            // Status
-            if (isRunning) {
-                statusEl.textContent = '🔴 Em execução';
-            } else if (isPaused) {
-                statusEl.textContent = '⏸️ Pausado';
-            } else {
-                statusEl.textContent = '⏹️ Parado';
-            }
-        }
+    updateDisplay();
+    updateDisplayWindow();
+    updateParticipantsList();
+}
 
-        // Abrir janela de display
-        function openDisplayWindow() {
-            if (displayWindow && !displayWindow.closed) {
-                displayWindow.focus();
-                return;
-            }
+// Navegar participantes
+function previousParticipant() {
+    if (participants.length === 0) return;
+    
+    if (isRunning) {
+        pauseTimer(); // Pausa o timer antes de mudar
+    }
+    // Marca o participante atual como 'finished' se o tempo acabou, senão como 'ready'
+    if (participants[currentParticipantIndex] && participants[currentParticipantIndex].remainingTime <= 0) {
+         participants[currentParticipantIndex].status = 'finished';
+    } else if (participants[currentParticipantIndex]) {
+         participants[currentParticipantIndex].status = 'ready';
+    }
 
-            displayWindow = window.open('', 'displayWindow', 'width=800,height=600,resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no');
-            
-            displayWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="pt">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Temporizador - Display</title>
-                    <style>
-                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body {
-                            background: #1a202c;
-                            color: white;
-                            font-family: 'Segoe UI', Arial, sans-serif;
-                            height: 100vh;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            overflow: hidden;
-                            transition: background-color 0.5s ease; /* Smooth transition for background color */
-                        }
-                        .display-container {
-                            text-align: center;
-                            width: 100%;
-                            padding: 40px;
-                        }
-                        .speaker-name {
-                            font-size: 3rem;
-                            font-weight: 700;
-                            margin-bottom: 30px;
-                            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-                        }
-                        .time-display {
-                            font-size: 18vw;
-                            font-weight: 700;
-                            font-family: 'Courier New', monospace;
-                            text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
-                            margin: 0;
-                            line-height: 0.8;
-                            height: 65vh;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                        }
-                        .time-green { color: #48bb78; }
-                        .time-yellow { color: #ed8936; }
-                        .time-red { color: #f56565; }
-                        .time-negative { color: #f56565; } /* Style for negative time in display window */
-                        .status-display {
-                            font-size: 1.5rem;
-                            opacity: 0.8;
-                        }
-                        .debate-grid {
-                            display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                            gap: 20px;
-                            width: 100%;
-                            max-width: 1200px;
-                        }
-                        .debate-participant {
-                            background: rgba(255,255,255,0.1);
-                            border-radius: 15px;
-                            padding: 20px;
-                            text-align: center;
-                            border: 3px solid transparent;
-                            transition: border-color 0.3s, background-color 0.3s;
-                        }
-                        .debate-participant.active {
-                            border-color: #ed8936;
-                            background: rgba(237,137,54,0.2);
-                        }
-                        .debate-name {
-                            font-size: 1.5rem;
-                            font-weight: 600;
-                            margin-bottom: 10px;
-                        }
-                        .debate-time {
-                            font-size: 2.5rem;
-                            font-weight: 700;
-                            font-family: 'Courier New', monospace;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="display-container" id="displayContainer">
-                        <div class="speaker-name" id="displaySpeaker">Aguardando...</div>
-                        <div class="time-display" id="displayTime">00:00</div>
-                        <div class="status-display" id="displayStatus">Sistema iniciado</div>
-                    </div>
-                </body>
-                </html>
-            `);
 
-            displayWindow.document.close();
-            updateDisplayWindow();
-        }
+    currentParticipantIndex = currentParticipantIndex > 0 ? currentParticipantIndex - 1 : participants.length - 1;
+    currentTime = participants[currentParticipantIndex].remainingTime;
+    participants[currentParticipantIndex].status = 'ready'; // Marca o novo selecionado como pronto
+    updateDisplay();
+    updateDisplayWindow();
+    updateParticipantsList();
+}
 
-        // Atualizar janela de display
-        function updateDisplayWindow() {
-            if (!displayWindow || displayWindow.closed) return;
+function nextParticipant() {
+    if (participants.length === 0) return;
+    
+    if (isRunning) {
+        pauseTimer(); // Pausa o timer antes de mudar
+    }
+    // Marca o participante atual como 'finished' se o tempo acabou, senão como 'ready'
+    if (participants[currentParticipantIndex] && participants[currentParticipantIndex].remainingTime <= 0) {
+        participants[currentParticipantIndex].status = 'finished';
+    } else if (participants[currentParticipantIndex]) {
+        participants[currentParticipantIndex].status = 'ready';
+    }
 
-            const container = displayWindow.document.getElementById('displayContainer');
-            let contentHtml = '';
+    currentParticipantIndex = (currentParticipantIndex + 1) % participants.length;
+    currentTime = participants[currentParticipantIndex].remainingTime;
+    participants[currentParticipantIndex].status = 'ready'; // Marca o novo selecionado como pronto
+    updateDisplay();
+    updateDisplayWindow();
+    updateParticipantsList();
+}
 
-            // Get alert settings from the main window's input fields
-            const currentYellowAlert = parseInt(document.getElementById('yellowAlert').value) || 0;
-            const currentRedAlert = parseInt(document.getElementById('redAlert').value) || 0;
-            const currentAlertType = document.getElementById('alertType').value;
+// Ajustar tempo
+function adjustTime(seconds) {
+    if (participants.length === 0) return;
+    
+    currentTime = currentTime + seconds; // Agora pode ir para negativo
+    participants[currentParticipantIndex].remainingTime = currentTime;
+    updateDisplay();
+    updateDisplayWindow();
+    updateParticipantsList();
+}
 
-            if (currentMode === 'individual') {
-                const participant = participants[currentParticipantIndex];
-                const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
-                const displaySeconds = Math.abs(currentTime) % 60;
-                const sign = currentTime < 0 ? '-' : '';
+// Atualizar display principal (melhorado com alertas e tempo negativo)
+function updateDisplay() {
+    // Atualizar configurações de alerta
+    alertSettings.yellow = parseInt(document.getElementById('yellowAlert').value) || 0;
+    alertSettings.red = parseInt(document.getElementById('redAlert').value) || 0;
+    alertSettings.type = document.getElementById('alertType').value;
 
-                let timeClass = 'time-green';
-                
-                if (currentTime <= currentRedAlert) {
-                    timeClass = 'time-red';
-                } else if (currentTime <= currentYellowAlert) {
-                    timeClass = 'time-yellow';
+    const speakerEl = document.getElementById('currentSpeaker');
+    const timeEl = document.getElementById('currentTime');
+    const statusEl = document.getElementById('sessionStatus');
+
+    if (participants.length === 0 || !participants[currentParticipantIndex]) {
+        speakerEl.textContent = 'Selecione um participante';
+        timeEl.textContent = '00:00';
+        timeEl.className = 'current-time';
+        statusEl.textContent = 'Sessão não iniciada';
+        return;
+    }
+
+    const participant = participants[currentParticipantIndex];
+    const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
+    const displaySeconds = Math.abs(currentTime) % 60;
+    const sign = currentTime < 0 ? '-' : '';
+    
+    speakerEl.textContent = participant.name;
+    timeEl.textContent = `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
+    
+    // Sistema de cores baseado nos alertas configurados
+    if (currentTime <= alertSettings.red) {
+        timeEl.className = 'current-time time-red';
+    } else if (currentTime <= alertSettings.yellow) {
+        timeEl.className = 'current-time time-yellow';
+    } else {
+        timeEl.className = 'current-time time-green';
+    }
+
+    // Se o tempo for negativo, adiciona classe específica (pode ser redundante com time-red mas mantém a flexibilidade)
+    if (currentTime < 0) {
+        timeEl.classList.add('time-negative');
+    } else {
+        timeEl.classList.remove('time-negative');
+    }
+
+    // Status
+    if (isRunning) {
+        statusEl.textContent = '🔴 Em execução';
+    } else if (isPaused) {
+        statusEl.textContent = '⏸️ Pausado';
+    } else {
+        statusEl.textContent = '⏹️ Parado';
+    }
+}
+
+// Abrir janela de display
+function openDisplayWindow() {
+    if (displayWindow && !displayWindow.closed) {
+        displayWindow.focus();
+        return;
+    }
+
+    displayWindow = window.open('', 'displayWindow', 'width=800,height=600,resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no');
+    
+    displayWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="pt">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Temporizador - Display</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    background: #1a202c;
+                    color: white;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    overflow: hidden;
+                    transition: background-color 0.5s ease; /* Smooth transition for background color */
                 }
-
-                // If time is negative, add time-negative class
-                if (currentTime < 0) {
-                    timeClass += ' time-negative';
+                .display-container {
+                    text-align: center;
+                    width: 100%;
+                    padding: 40px;
                 }
-
-                contentHtml = `
-                    <div class="speaker-name" id="displaySpeaker">${participant ? participant.name : 'Aguardando...'}</div>
-                    <div class="time-display ${timeClass}" id="displayTime">${participant ? `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}` : '00:00'}</div>
-                    <div class="status-display" id="displayStatus">${isRunning ? '🔴 Em execução' : (isPaused ? '⏸️ Pausado' : '⏹️ Parado')}</div>
-                `;
-                container.innerHTML = contentHtml;
-
-                // Apply background color based on alert settings and current time
-                if (currentAlertType === 'background' || currentAlertType === 'both') {
-                    if (currentTime <= currentRedAlert) {
-                        displayWindow.document.body.style.backgroundColor = '#4a0e0e'; // Dark red for background
-                    } else if (currentTime <= currentYellowAlert) {
-                        displayWindow.document.body.style.backgroundColor = '#4a320e'; // Dark orange/yellow for background
-                    } else {
-                        displayWindow.document.body.style.backgroundColor = '#1a202c'; // Default dark background
-                    }
-                } else {
-                    displayWindow.document.body.style.backgroundColor = '#1a202c'; // Ensure default if only text alert
+                .speaker-name {
+                    font-size: 3rem;
+                    font-weight: 700;
+                    margin-bottom: 30px;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
                 }
+                .time-display {
+                    font-size: 18vw;
+                    font-weight: 700;
+                    font-family: 'Courier New', monospace;
+                    text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+                    margin: 0;
+                    line-height: 0.8;
+                    height: 65vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .time-green { color: #48bb78; }
+                .time-yellow { color: #ed8936; }
+                .time-red { color: #f56565; }
+                .time-negative { color: #f56565; } /* Style for negative time in display window */
+                .status-display {
+                    font-size: 1.5rem;
+                    opacity: 0.8;
+                }
+                .debate-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: 20px;
+                    width: 100%;
+                    max-width: 1200px;
+                }
+                .debate-participant {
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 15px;
+                    padding: 20px;
+                    text-align: center;
+                    border: 3px solid transparent;
+                    transition: border-color 0.3s, background-color 0.3s;
+                }
+                .debate-participant.active {
+                    border-color: #ed8936;
+                    background: rgba(237,137,54,0.2);
+                }
+                .debate-name {
+                    font-size: 1.5rem;
+                    font-weight: 600;
+                    margin-bottom: 10px;
+                }
+                .debate-time {
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                    font-family: 'Courier New', monospace;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="display-container" id="displayContainer">
+                <div class="speaker-name" id="displaySpeaker">Aguardando...</div>
+                <div class="time-display" id="displayTime">00:00</div>
+                <div class="status-display" id="displayStatus">Sistema iniciado</div>
+            </div>
+        </body>
+        </html>
+    `);
 
-            } else if (currentMode === 'debate') {
-                const debateParticipantsHtml = participants.map((participant, index) => {
-                    const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
-                    const displaySeconds = Math.abs(participant.remainingTime) % 60;
-                    const sign = participant.remainingTime < 0 ? '-' : '';
+    displayWindow.document.close();
+    updateDisplayWindow();
+}
 
-                    let timeClass = '';
-                    
-                    if (participant.remainingTime <= currentRedAlert) {
-                        timeClass = 'time-red';
-                    } else if (participant.remainingTime <= currentYellowAlert) {
-                        timeClass = 'time-yellow';
-                    } else {
-                        timeClass = 'time-green';
-                    }
+// Atualizar janela de display
+function updateDisplayWindow() {
+    if (!displayWindow || displayWindow.closed) return;
 
-                    if (participant.remainingTime < 0) {
-                        timeClass += ' time-negative';
-                    }
+    const container = displayWindow.document.getElementById('displayContainer');
+    let contentHtml = '';
 
-                    const isActive = index === currentParticipantIndex && isRunning;
-                    return `
-                        <div class="debate-participant ${isActive ? 'active' : ''}">
-                            <div class="debate-name">${participant.name}</div>
-                            <div class="debate-time ${timeClass}">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</div>
-                        </div>
-                    `;
-                }).join('');
+    // Get alert settings from the main window's input fields
+    const currentYellowAlert = parseInt(document.getElementById('yellowAlert').value) || 0;
+    const currentRedAlert = parseInt(document.getElementById('redAlert').value) || 0;
+    const currentAlertType = document.getElementById('alertType').value;
 
-                contentHtml = `
-                    <div class="debate-grid">
-                        ${debateParticipantsHtml}
-                    </div>
-                `;
-                container.innerHTML = contentHtml;
-                displayWindow.document.body.style.backgroundColor = '#1a202c'; // Default dark background for debate mode
-            }
+    if (currentMode === 'individual') {
+        const participant = participants[currentParticipantIndex];
+        const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
+        const displaySeconds = Math.abs(currentTime) % 60;
+        const sign = currentTime < 0 ? '-' : '';
+
+        let timeClass = 'time-green';
+        
+        if (currentTime <= currentRedAlert) {
+            timeClass = 'time-red';
+        } else if (currentTime <= currentYellowAlert) {
+            timeClass = 'time-yellow';
         }
 
-        // Inicializa a exibição ao carregar a página
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('participantMinutes').value = '5'; // Define 5 minutos como padrão
-            updateParticipantsList();
-            updateDisplay();
-        });
+        // If time is negative, add time-negative class
+        if (currentTime < 0) {
+            timeClass += ' time-negative';
+        }
+
+        contentHtml = `
+            <div class="speaker-name" id="displaySpeaker">${participant ? participant.name : 'Aguardando...'}</div>
+            <div class="time-display ${timeClass}" id="displayTime">${participant ? `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}` : '00:00'}</div>
+            <div class="status-display" id="displayStatus">${isRunning ? '🔴 Em execução' : (isPaused ? '⏸️ Pausado' : '⏹️ Parado')}</div>
+        `;
+        container.innerHTML = contentHtml;
+
+        // Apply background color based on alert settings and current time
+        if (currentAlertType === 'background' || currentAlertType === 'both') {
+            if (currentTime <= currentRedAlert) {
+                displayWindow.document.body.style.backgroundColor = '#4a0e0e'; // Dark red for background
+            } else if (currentTime <= currentYellowAlert) {
+                displayWindow.document.body.style.backgroundColor = '#4a320e'; // Dark orange/yellow for background
+            } else {
+                displayWindow.document.body.style.backgroundColor = '#1a202c'; // Default dark background
+            }
+        } else {
+            displayWindow.document.body.style.backgroundColor = '#1a202c'; // Ensure default if only text alert
+        }
+
+    } else if (currentMode === 'debate') {
+        const debateParticipantsHtml = participants.map((participant, index) => {
+            const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
+            const displaySeconds = Math.abs(participant.remainingTime) % 60;
+            const sign = participant.remainingTime < 0 ? '-' : '';
+
+            let timeClass = '';
+            
+            if (participant.remainingTime <= currentRedAlert) {
+                timeClass = 'time-red';
+            } else if (participant.remainingTime <= currentYellowAlert) {
+                timeClass = 'time-yellow';
+            } else {
+                timeClass = 'time-green';
+            }
+
+            if (participant.remainingTime < 0) {
+                timeClass += ' time-negative';
+            }
+
+            const isActive = index === currentParticipantIndex && isRunning;
+            return `
+                <div class="debate-participant ${isActive ? 'active' : ''}">
+                    <div class="debate-name">${participant.name}</div>
+                    <div class="debate-time ${timeClass}">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</div>
+                </div>
+            `;
+        }).join('');
+
+        contentHtml = `
+            <div class="debate-grid">
+                ${debateParticipantsHtml}
+            </div>
+        `;
+        container.innerHTML = contentHtml;
+        displayWindow.document.body.style.backgroundColor = '#1a202c'; // Default dark background for debate mode
+    }
+}
+
+// Inicializa a exibição ao carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+    // document.getElementById('participantMinutes').value = '5'; // Removida esta linha
+    updateParticipantsList();
+    updateDisplay();
+});
     </script>
 </body>
 </html>
