@@ -19,9 +19,43 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .column {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.05);
+        }
+
+        .column-title {
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .column-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 2px;
         }
 
         .header {
@@ -208,17 +242,18 @@
         }
 
         .current-session {
-            background: #f0fff4;
+            background: #2d2d2d;
             border: 2px solid #48bb78;
             border-radius: 10px;
             padding: 20px;
             text-align: center;
+            margin-bottom: 20px;
         }
 
         .current-speaker {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #2d3748;
+            color: #ffffff;
             margin-bottom: 10px;
         }
 
@@ -294,6 +329,13 @@
             background: #5a6fd8;
         }
 
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+
         @media (max-width: 768px) {
             .form-group {
                 flex-direction: column;
@@ -322,48 +364,33 @@
             <p>Sistema profissional de gestão de tempo para apresentações e debates</p>
         </div>
 
-        <div class="main-panel">
-            <!-- Configuração de Sessão -->
-            <div class="section">
-                <h2 class="section-title">⚙️ Configuração de Sessão</h2>
+        <!-- Layout de 3 Colunas -->
+        <div class="main-layout">
+            <!-- Coluna Esquerda: Configuração -->
+            <div class="column">
+                <h2 class="column-title">⚙️ Configuração de Sessão</h2>
                 
                 <div class="form-group">
                     <label>Nome da Sessão:</label>
-                    <input type="text" id="sessionName" placeholder="Ex: Debate Final 2024" value="Nova Sessão">
+                    <input type="text" id="sessionName" placeholder="Ex: Debate Final 2024" value="Nova Sessão" style="width: 100%;">
                 </div>
 
                 <div class="form-group">
                     <label>Nome do Participante:</label>
-                    <input type="text" id="participantName" placeholder="Ex: João Silva">
-                    <label>Tempo (min):</label>
-                    <input type="number" id="participantTime" placeholder="5" min="1" max="60" value="5">
-                    <button class="btn btn-primary" onclick="addParticipant()">Adicionar</button>
+                    <input type="text" id="participantName" placeholder="Ex: João Silva" style="width: 100%;">
                 </div>
-
-                <div class="participants-list" id="participantsList">
-                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
-                </div>
-            </div>
-
-            <!-- Seleção de Modo -->
-            <div class="section">
-                <h2 class="section-title">🎮 Modo de Operação</h2>
                 
-                <div class="mode-selector">
-                    <div class="mode-btn active" onclick="setMode('individual')">
-                        <strong>Modo Individual</strong><br>
-                        <small>Um orador por vez em destaque</small>
-                    </div>
-                    <div class="mode-btn" onclick="setMode('debate')">
-                        <strong>Modo Debate</strong><br>
-                        <small>Todos os participantes visíveis</small>
-                    </div>
+                <div class="form-group">
+                    <label>Tempo (min):</label>
+                    <input type="number" id="participantTime" placeholder="5" min="1" max="60" value="5" style="width: 100%;">
                 </div>
+                
+                <button class="btn btn-primary" onclick="addParticipant()" style="width: 100%; margin-top: 10px;">Adicionar Participante</button>
             </div>
 
-            <!-- Controlo da Sessão -->
-            <div class="section">
-                <h2 class="section-title">🎛️ Controlo da Sessão</h2>
+            <!-- Coluna Central: Controlo -->
+            <div class="column">
+                <h2 class="column-title">🎛️ Controlo da Sessão</h2>
                 
                 <div class="current-session" id="sessionDisplay">
                     <div class="current-speaker" id="currentSpeaker">Selecione um participante</div>
@@ -375,16 +402,41 @@
                     <button class="btn btn-success" onclick="startTimer()" id="startBtn">▶️ Iniciar</button>
                     <button class="btn btn-warning" onclick="pauseTimer()" id="pauseBtn">⏸️ Pausar</button>
                     <button class="btn btn-danger" onclick="resetTimer()" id="resetBtn">⏹️ Reset</button>
+                </div>
+
+                <div class="controls">
                     <button class="btn btn-secondary" onclick="previousParticipant()">⏮️ Anterior</button>
                     <button class="btn btn-secondary" onclick="nextParticipant()">⏭️ Próximo</button>
                 </div>
 
-                <div class="form-group" style="justify-content: center; margin-top: 20px;">
-                    <label>Ajustar Tempo:</label>
+                <div class="form-group" style="justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+                    <label style="width: 100%; text-align: center; margin-bottom: 10px;">Ajustar Tempo:</label>
                     <button class="btn btn-secondary" onclick="adjustTime(-30)">-30s</button>
                     <button class="btn btn-secondary" onclick="adjustTime(-10)">-10s</button>
                     <button class="btn btn-secondary" onclick="adjustTime(10)">+10s</button>
                     <button class="btn btn-secondary" onclick="adjustTime(30)">+30s</button>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Participantes e Modo -->
+            <div class="column">
+                <h2 class="column-title">🎮 Modo de Operação</h2>
+                
+                <div class="mode-selector">
+                    <div class="mode-btn active" onclick="setMode('individual')">
+                        <strong>Individual</strong><br>
+                        <small>Um orador</small>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('debate')">
+                        <strong>Debate</strong><br>
+                        <small>Todos visíveis</small>
+                    </div>
+                </div>
+
+                <h3 style="color: #ffffff; margin: 20px 0 15px 0; font-size: 1.1rem;">👥 Participantes</h3>
+                
+                <div class="participants-list" id="participantsList">
+                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
                 </div>
             </div>
         </div>
@@ -666,11 +718,12 @@
                             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
                         }
                         .time-display {
-                            font-size: 8rem;
+                            font-size: 12rem;
                             font-weight: 700;
                             font-family: 'Courier New', monospace;
                             text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
                             margin-bottom: 20px;
+                            line-height: 0.9;
                         }
                         .time-green { color: #48bb78; }
                         .time-yellow { color: #ed8936; }
