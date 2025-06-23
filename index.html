@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temporizador de Apresentações</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #4a5568;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            min-width: 120px;
+        }
+
+        .form-group input, .form-group select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #dd6b20;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .participants-list {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .participant-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .participant-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .participant-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .participant-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .participant-time {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .current-session {
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .current-speaker {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .current-time {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .time-green { color: #48bb78; }
+        .time-yellow { color: #ed8936; }
+        .time-red { color: #f56565; }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .mode-btn:hover {
+            border-color: #667eea;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-ready { background: #48bb78; }
+        .status-active { background: #ed8936; }
+        .status-finished { background: #f56565; }
+
+        .display-window-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .display-window-btn:hover {
+            transform: scale(1.1);
+            background: #5a6fd8;
+        }
+
+        @media (max-width: 768px) {
+            .form-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .form-group label {
+                min-width: auto;
+            }
+
+            .controls {
+                gap: 8px;
+            }
+
+            .btn {
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Temporizador de Apresentações</h1>
+            <p>Sistema profissional de gestão de tempo para apresentações e debates</p>
+        </div>
+
+        <div class="main-panel">
+            <!-- Configuração de Sessão -->
+            <div class="section">
+                <h2 class="section-title">⚙️ Configuração de Sessão</h2>
+                
+                <div class="form-group">
+                    <label>Nome da Sessão:</label>
+                    <input type="text" id="sessionName" placeholder="Ex: Debate Final 2024" value="Nova Sessão">
+                </div>
+
+                <div class="form-group">
+                    <label>Nome do Participante:</label>
+                    <input type="text" id="participantName" placeholder="Ex: João Silva">
+                    <label>Tempo (min):</label>
+                    <input type="number" id="participantTime" placeholder="5" min="1" max="60" value="5">
+                    <button class="btn btn-primary" onclick="addParticipant()">Adicionar</button>
+                </div>
+
+                <div class="participants-list" id="participantsList">
+                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
+                </div>
+            </div>
+
+            <!-- Seleção de Modo -->
+            <div class="section">
+                <h2 class="section-title">🎮 Modo de Operação</h2>
+                
+                <div class="mode-selector">
+                    <div class="mode-btn active" onclick="setMode('individual')">
+                        <strong>Modo Individual</strong><br>
+                        <small>Um orador por vez em destaque</small>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('debate')">
+                        <strong>Modo Debate</strong><br>
+                        <small>Todos os participantes visíveis</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controlo da Sessão -->
+            <div class="section">
+                <h2 class="section-title">🎛️ Controlo da Sessão</h2>
+                
+                <div class="current-session" id="sessionDisplay">
+                    <div class="current-speaker" id="currentSpeaker">Selecione um participante</div>
+                    <div class="current-time" id="currentTime">00:00</div>
+                    <div id="sessionStatus">Sessão não iniciada</div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-success" onclick="startTimer()" id="startBtn">▶️ Iniciar</button>
+                    <button class="btn btn-warning" onclick="pauseTimer()" id="pauseBtn">⏸️ Pausar</button>
+                    <button class="btn btn-danger" onclick="resetTimer()" id="resetBtn">⏹️ Reset</button>
+                    <button class="btn btn-secondary" onclick="previousParticipant()">⏮️ Anterior</button>
+                    <button class="btn btn-secondary" onclick="nextParticipant()">⏭️ Próximo</button>
+                </div>
+
+                <div class="form-group" style="justify-content: center; margin-top: 20px;">
+                    <label>Ajustar Tempo:</label>
+                    <button class="btn btn-secondary" onclick="adjustTime(-30)">-30s</button>
+                    <button class="btn btn-secondary" onclick="adjustTime(-10)">-10s</button>
+                    <button class="btn btn-secondary" onclick="adjustTime(10)">+10s</button>
+                    <button class="btn btn-secondary" onclick="adjustTime(30)">+30s</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="display-window-btn" onclick="openDisplayWindow()" title="Abrir Ecrã de Apresentação">
+        📺
+    </button>
+
+    <script>
+        // Estado da aplicação
+        let participants = [];
+        let currentParticipantIndex = 0;
+        let currentMode = 'individual';
+        let isRunning = false;
+        let isPaused = false;
+        let currentTime = 0;
+        let timerInterval = null;
+        let displayWindow = null;
+
+        // Adicionar participante
+        function addParticipant() {
+            const name = document.getElementById('participantName').value.trim();
+            const time = parseInt(document.getElementById('participantTime').value);
+
+            if (!name || !time) {
+                alert('Por favor, preencha o nome e o tempo do participante.');
+                return;
+            }
+
+            const participant = {
+                id: Date.now(),
+                name: name,
+                timeMinutes: time,
+                timeSeconds: time * 60,
+                remainingTime: time * 60,
+                status: 'ready'
+            };
+
+            participants.push(participant);
+            updateParticipantsList();
+            
+            // Limpar campos
+            document.getElementById('participantName').value = '';
+            document.getElementById('participantTime').value = '5';
+        }
+
+        // Atualizar lista de participantes
+        function updateParticipantsList() {
+            const list = document.getElementById('participantsList');
+            
+            if (participants.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>';
+                return;
+            }
+
+            list.innerHTML = participants.map((participant, index) => `
+                <div class="participant-item">
+                    <div class="participant-info">
+                        <span class="status-indicator status-${participant.status}"></span>
+                        <span class="participant-name">${participant.name}</span>
+                        <span class="participant-time">${Math.floor(participant.remainingTime / 60)}:${(participant.remainingTime % 60).toString().padStart(2, '0')}</span>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="selectParticipant(${index})" style="padding: 5px 10px; font-size: 12px;">Selecionar</button>
+                        <button class="btn btn-danger" onclick="removeParticipant(${index})" style="padding: 5px 10px; font-size: 12px;">Remover</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Remover participante
+        function removeParticipant(index) {
+            participants.splice(index, 1);
+            if (currentParticipantIndex >= participants.length) {
+                currentParticipantIndex = 0;
+            }
+            updateParticipantsList();
+            updateDisplay();
+        }
+
+        // Selecionar participante
+        function selectParticipant(index) {
+            if (isRunning) {
+                pauseTimer();
+            }
+            currentParticipantIndex = index;
+            currentTime = participants[index].remainingTime;
+            updateDisplay();
+        }
+
+        // Definir modo
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.mode-btn').classList.add('active');
+            updateDisplayWindow();
+        }
+
+        // Iniciar temporizador
+        function startTimer() {
+            if (participants.length === 0) {
+                alert('Adicione pelo menos um participante antes de iniciar.');
+                return;
+            }
+
+            isRunning = true;
+            isPaused = false;
+            
+            if (participants[currentParticipantIndex]) {
+                participants[currentParticipantIndex].status = 'active';
+            }
+
+            timerInterval = setInterval(() => {
+                if (currentTime > 0) {
+                    currentTime--;
+                    if (participants[currentParticipantIndex]) {
+                        participants[currentParticipantIndex].remainingTime = currentTime;
+                    }
+                } else {
+                    // Tempo esgotado
+                    if (participants[currentParticipantIndex]) {
+                        participants[currentParticipantIndex].status = 'finished';
+                    }
+                }
+                updateDisplay();
+                updateDisplayWindow();
+                updateParticipantsList();
+            }, 1000);
+
+            updateDisplay();
+        }
+
+        // Pausar temporizador
+        function pauseTimer() {
+            isRunning = false;
+            isPaused = true;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            updateDisplay();
+        }
+
+        // Reset temporizador
+        function resetTimer() {
+            isRunning = false;
+            isPaused = false;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
+            // Reset de todos os participantes
+            participants.forEach(participant => {
+                participant.remainingTime = participant.timeSeconds;
+                participant.status = 'ready';
+            });
+
+            if (participants[currentParticipantIndex]) {
+                currentTime = participants[currentParticipantIndex].remainingTime;
+            }
+
+            updateDisplay();
+            updateDisplayWindow();
+            updateParticipantsList();
+        }
+
+        // Navegar participantes
+        function previousParticipant() {
+            if (participants.length === 0) return;
+            
+            if (isRunning) pauseTimer();
+            
+            currentParticipantIndex = currentParticipantIndex > 0 ? currentParticipantIndex - 1 : participants.length - 1;
+            currentTime = participants[currentParticipantIndex].remainingTime;
+            updateDisplay();
+        }
+
+        function nextParticipant() {
+            if (participants.length === 0) return;
+            
+            if (isRunning) pauseTimer();
+            
+            currentParticipantIndex = (currentParticipantIndex + 1) % participants.length;
+            currentTime = participants[currentParticipantIndex].remainingTime;
+            updateDisplay();
+        }
+
+        // Ajustar tempo
+        function adjustTime(seconds) {
+            if (participants.length === 0) return;
+            
+            currentTime = Math.max(0, currentTime + seconds);
+            participants[currentParticipantIndex].remainingTime = currentTime;
+            updateDisplay();
+            updateDisplayWindow();
+            updateParticipantsList();
+        }
+
+        // Atualizar display principal
+        function updateDisplay() {
+            const speakerEl = document.getElementById('currentSpeaker');
+            const timeEl = document.getElementById('currentTime');
+            const statusEl = document.getElementById('sessionStatus');
+
+            if (participants.length === 0 || !participants[currentParticipantIndex]) {
+                speakerEl.textContent = 'Selecione um participante';
+                timeEl.textContent = '00:00';
+                timeEl.className = 'current-time';
+                statusEl.textContent = 'Sessão não iniciada';
+                return;
+            }
+
+            const participant = participants[currentParticipantIndex];
+            const minutes = Math.floor(currentTime / 60);
+            const seconds = currentTime % 60;
+            
+            speakerEl.textContent = participant.name;
+            timeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Cor baseada no tempo restante
+            const percentage = currentTime / participant.timeSeconds;
+            if (percentage > 0.5) {
+                timeEl.className = 'current-time time-green';
+            } else if (percentage > 0.2) {
+                timeEl.className = 'current-time time-yellow';
+            } else {
+                timeEl.className = 'current-time time-red';
+            }
+
+            // Status
+            if (isRunning) {
+                statusEl.textContent = '🔴 Em execução';
+            } else if (isPaused) {
+                statusEl.textContent = '⏸️ Pausado';
+            } else {
+                statusEl.textContent = '⏹️ Parado';
+            }
+        }
+
+        // Abrir janela de display
+        function openDisplayWindow() {
+            if (displayWindow && !displayWindow.closed) {
+                displayWindow.focus();
+                return;
+            }
+
+            displayWindow = window.open('', 'displayWindow', 'width=800,height=600,resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no');
+            
+            displayWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="pt">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Temporizador - Display</title>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body {
+                            background: #1a202c;
+                            color: white;
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            height: 100vh;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            overflow: hidden;
+                        }
+                        .display-container {
+                            text-align: center;
+                            width: 100%;
+                            padding: 40px;
+                        }
+                        .speaker-name {
+                            font-size: 3rem;
+                            font-weight: 700;
+                            margin-bottom: 30px;
+                            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                        }
+                        .time-display {
+                            font-size: 8rem;
+                            font-weight: 700;
+                            font-family: 'Courier New', monospace;
+                            text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+                            margin-bottom: 20px;
+                        }
+                        .time-green { color: #48bb78; }
+                        .time-yellow { color: #ed8936; }
+                        .time-red { color: #f56565; }
+                        .status-display {
+                            font-size: 1.5rem;
+                            opacity: 0.8;
+                        }
+                        .debate-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                            gap: 20px;
+                            width: 100%;
+                            max-width: 1200px;
+                        }
+                        .debate-participant {
+                            background: rgba(255,255,255,0.1);
+                            border-radius: 15px;
+                            padding: 20px;
+                            text-align: center;
+                            border: 3px solid transparent;
+                        }
+                        .debate-participant.active {
+                            border-color: #ed8936;
+                            background: rgba(237,137,54,0.2);
+                        }
+                        .debate-name {
+                            font-size: 1.5rem;
+                            font-weight: 600;
+                            margin-bottom: 10px;
+                        }
+                        .debate-time {
+                            font-size: 2.5rem;
+                            font-weight: 700;
+                            font-family: 'Courier New', monospace;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="display-container" id="displayContainer">
+                        <div class="speaker-name" id="displaySpeaker">Aguardando...</div>
+                        <div class="time-display" id="displayTime">00:00</div>
+                        <div class="status-display" id="displayStatus">Sistema iniciado</div>
+                    </div>
+                </body>
+                </html>
+            `);
+
+            displayWindow.document.close();
+            updateDisplayWindow();
+        }
+
+        // Atualizar janela de display
+        function updateDisplayWindow() {
+            if (!displayWindow || displayWindow.closed) return;
+
+            const container = displayWindow.document.getElementById('displayContainer');
+            const speakerEl = displayWindow.document.getElementById('displaySpeaker');
+            const timeEl = displayWindow.document.getElementById('displayTime');
+            const statusEl = displayWindow.document.getElementById('displayStatus');
+
+            if (currentMode === 'individual') {
+                // Modo individual
+                container.innerHTML = `
+                    <div class="speaker-name" id="displaySpeaker">Aguardando...</div>
+                    <div class="time-display" id="displayTime">00:00</div>
+                    <div class="status-display" id="displayStatus">Sistema iniciado</div>
+                `;
+
+                const newSpeakerEl = displayWindow.document.getElementById('displaySpeaker');
+                const newTimeEl = displayWindow.document.getElementById('displayTime');
+                const newStatusEl = displayWindow.document.getElementById('displayStatus');
+
+                if (participants.length > 0 && participants[currentParticipantIndex]) {
+                    const participant = participants[currentParticipantIndex];
+                    const minutes = Math.floor(currentTime / 60);
+                    const seconds = currentTime % 60;
+                    
+                    newSpeakerEl.textContent = participant.name;
+                    newTimeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    const percentage = currentTime / participant.timeSeconds;
+                    if (percentage > 0.5) {
+                        newTimeEl.className = 'time-display time-green';
+                    } else if (percentage > 0.2) {
+                        newTimeEl.className = 'time-display time-yellow';
+                    } else {
+                        newTimeEl.className = 'time-display time-red';
+                    }
+
+                    if (isRunning) {
+                        newStatusEl.textContent = 'Em execução';
+                    } else if (isPaused) {
+                        newStatusEl.textContent = 'Pausado';
+                    } else {
+                        newStatusEl.textContent = 'Parado';
+                    }
+                }
+            } else {
+                // Modo debate
+                container.innerHTML = `
+                    <div class="debate-grid">
+                        ${participants.map((participant, index) => {
+                            const minutes = Math.floor(participant.remainingTime / 60);
+                            const seconds = participant.remainingTime % 60;
+                            const percentage = participant.remainingTime / participant.timeSeconds;
+                            
+                            let timeClass = 'time-green';
+                            if (percentage <= 0.2) timeClass = 'time-red';
+                            else if (percentage <= 0.5) timeClass = 'time-yellow';
+                            
+                            return `
+                                <div class="debate-participant ${index === currentParticipantIndex ? 'active' : ''}">
+                                    <div class="debate-name">${participant.name}</div>
+                                    <div class="debate-time ${timeClass}">${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDisplay();
+            
+            // Atalhos de teclado
+            document.addEventListener('keydown', function(e) {
+                if (e.target.tagName === 'INPUT') return;
+                
+                switch(e.key) {
+                    case ' ':
+                        e.preventDefault();
+                        if (isRunning) pauseTimer();
+                        else startTimer();
+                        break;
+                    case 'r':
+                        resetTimer();
+                        break;
+                    case 'ArrowLeft':
+                        previousParticipant();
+                        break;
+                    case 'ArrowRight':
+                        nextParticipant();
+                        break;
+                }
+            });
+        });
+
+        // Fechar janela de display ao fechar principal
+        window.addEventListener('beforeunload', function() {
+            if (displayWindow && !displayWindow.closed) {
+                displayWindow.close();
+            }
+        });
+    </script>
+</body>
+</html>
