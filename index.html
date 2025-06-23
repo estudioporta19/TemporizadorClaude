@@ -1,1460 +1,1472 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temporizador de Apresentações</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temporizador de Apresentações</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #000000;
-            min-height: 100vh;
-            color: #ffffff;
-        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            color: #ffffff;
+        }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-        .main-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
-        }
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
 
-        .column {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(255,255,255,0.05);
-        }
+        .column {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.05);
+        }
 
-        .column-title {
-            font-size: 1.4rem;
-            color: #ffffff;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-        }
+        .column-title {
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
 
-        .column-title::before {
-            content: '';
-            width: 4px;
-            height: 20px;
-            background: #667eea;
-            border-radius: 2px;
-        }
+        .column-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 2px;
+        }
 
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
 
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
 
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
 
-        .main-panel {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(255,255,255,0.05);
-            margin-bottom: 20px;
-        }
+        .main-panel {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.05);
+            margin-bottom: 20px;
+        }
 
-        .section {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
-        }
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
 
-        .section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
 
-        .section-title {
-            font-size: 1.3rem;
-            color: #ffffff;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .section-title {
+            font-size: 1.3rem;
+            color: #ffffff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        .section-title::before {
-            content: '';
-            width: 4px;
-            height: 20px;
-            background: #667eea;
-            border-radius: 2px;
-        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 2px;
+        }
 
-        .form-group {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
+        .form-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
 
-        .form-group label {
-            font-weight: 600;
-            min-width: 120px;
-        }
+        .form-group label {
+            font-weight: 600;
+            min-width: 120px;
+        }
 
-        .form-group input, .form-group select {
-            padding: 8px 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-            background-color: #333; /* Darker background for inputs */
-            color: #fff; /* White text for inputs */
-        }
+        .form-group input, .form-group select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            background-color: #333; /* Darker background for inputs */
+            color: #fff; /* White text for inputs */
+        }
 
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
 
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
 
-        .btn-primary:hover:not(:disabled) {
-            background: #5a6fd8;
-            transform: translateY(-2px);
-        }
+        .btn-primary:hover:not(:disabled) {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
 
-        .btn-secondary {
-            background: #718096;
-            color: white;
-        }
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
 
-        .btn-secondary:hover:not(:disabled) {
-            background: #4a5568;
-        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #4a5568;
+        }
 
-        .btn-success {
-            background: #48bb78;
-            color: white;
-        }
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
 
-        .btn-success:hover:not(:disabled) {
-            background: #38a169;
-        }
+        .btn-success:hover:not(:disabled) {
+            background: #38a169;
+        }
 
-        .btn-warning {
-            background: #ed8936;
-            color: white;
-        }
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
 
-        .btn-warning:hover:not(:disabled) {
-            background: #dd6b20;
-        }
+        .btn-warning:hover:not(:disabled) {
+            background: #dd6b20;
+        }
 
-        .btn-danger {
-            background: #f56565;
-            color: white;
-        }
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
 
-        .btn-danger:hover:not(:disabled) {
-            background: #e53e3e;
-        }
+        .btn-danger:hover:not(:disabled) {
+            background: #e53e3e;
+        }
 
-        .participants-list {
-            background: #2d2d2d;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-        }
+        .participants-list {
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
 
-        .participant-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: #3a3a3a;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
+        .participant-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #3a3a3a;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
 
-        .participant-item:last-child {
-            margin-bottom: 0;
-        }
+        .participant-item:last-child {
+            margin-bottom: 0;
+        }
 
-        .participant-info {
-            display: flex;
-            align-items: center;
-            gap: 10px; /* Reduced gap */
-        }
+        .participant-info {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Reduced gap */
+        }
 
-        .participant-color-indicator {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.3);
-            flex-shrink: 0; /* Prevents shrinking */
-        }
+        .participant-color-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+            flex-shrink: 0; /* Prevents shrinking */
+        }
 
-        .participant-name {
-            font-weight: 600;
-            color: #ffffff;
-        }
+        .participant-name {
+            font-weight: 600;
+            color: #ffffff;
+        }
 
-        .participant-time {
-            color: #cccccc;
-            font-size: 14px;
-        }
+        .participant-time {
+            color: #cccccc;
+            font-size: 14px;
+        }
 
-        .controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 20px;
-        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
 
-        .current-session {
-            background: #2d2d2d;
-            border: 2px solid #48bb78;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+        .current-session {
+            background: #2d2d2d;
+            border: 2px solid #48bb78;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-        .current-speaker {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 10px;
-        }
+        .current-speaker {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
 
-        .current-time {
-            font-size: 3rem;
-            font-weight: 700;
-            margin: 15px 0;
-            font-family: 'Courier New', monospace;
-        }
+        .current-time {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
 
-        .time-green { color: #48bb78; }
-        .time-yellow { color: #ed8936; }
-        .time-red { color: #f56565; }
-        .time-negative { color: #f56565; } /* New style for negative time */
+        .time-green { color: #48bb78; }
+        .time-yellow { color: #ed8936; }
+        .time-red { color: #f56565; }
+        .time-negative { color: #f56565; } /* New style for negative time */
 
-        .mode-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
 
-        .mode-btn {
-            flex: 1;
-            padding: 15px;
-            border: 2px solid #444;
-            background: #2d2d2d;
-            color: #ffffff;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.3s;
-        }
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #444;
+            background: #2d2d2d;
+            color: #ffffff;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
 
-        .mode-btn.active {
-            border-color: #667eea;
-            background: #667eea;
-            color: white;
-        }
+        .mode-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
 
-        .mode-btn:hover {
-            border-color: #667eea;
-        }
+        .mode-btn:hover {
+            border-color: #667eea;
+        }
 
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
 
-        .status-ready { background: #48bb78; }
-        .status-active { background: #ed8936; }
-        .status-finished { background: #f56565; }
+        .status-ready { background: #48bb78; }
+        .status-active { background: #ed8936; }
+        .status-finished { background: #f56565; }
 
-        .display-window-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #667eea;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 24px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: all 0.3s;
-        }
+        .display-window-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
 
-        .display-window-btn:hover {
-            transform: scale(1.1);
-            background: #5a6fd8;
-        }
+        .display-window-btn:hover {
+            transform: scale(1.1);
+            background: #5a6fd8;
+        }
 
-        /* Styles for small delete button */
-        .btn-delete-small {
-            padding: 5px 8px; /* Reduced padding */
-            font-size: 12px; /* Smaller font size */
-            line-height: 1;
-            width: 30px; /* Fixed width */
-            height: 30px; /* Fixed height */
-            border-radius: 50%; /* Make it round */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        /* Styles for small delete button */
+        .btn-delete-small {
+            padding: 5px 8px; /* Reduced padding */
+            font-size: 12px; /* Smaller font size */
+            line-height: 1;
+            width: 30px; /* Fixed width */
+            height: 30px; /* Fixed height */
+            border-radius: 50%; /* Make it round */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-        /* Input de mensagem */
-        .message-input-group {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid #333;
-        }
-        .message-input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            background-color: #2d2d2d;
-            color: #fff;
-            font-size: 1rem;
-            text-align: center;
-        }
-        .message-input::placeholder {
-            color: #aaa;
-            opacity: 0.8;
-            font-style: italic;
-        }
-        
-        /* Styles for session controls */
-        .session-control-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        .session-control-group .btn {
-            flex: 1;
-            min-width: 100px;
-        }
+        /* Input de mensagem */
+        .message-input-group {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+        .message-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background-color: #2d2d2d;
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .message-input::placeholder {
+            color: #aaa;
+            opacity: 0.8;
+            font-style: italic;
+        }
+        
+        /* Styles for session controls */
+        .session-control-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .session-control-group .btn {
+            flex: 1;
+            min-width: 100px;
+        }
 
 
-        @media (max-width: 1200px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-        }
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
 
-        @media (max-width: 768px) {
-            .form-group {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+        @media (max-width: 768px) {
+            .form-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
 
-            .form-group label {
-                min-width: auto;
-            }
+            .form-group label {
+                min-width: auto;
+            }
 
-            .controls {
-                gap: 8px;
-            }
+            .controls {
+                gap: 8px;
+            }
 
-            .btn {
-                padding: 8px 16px;
-                font-size: 12px;
-            }
-        }
-    </style>
+            .btn {
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎯 Temporizador de Apresentações</h1>
-            <p>Sistema profissional de gestão de tempo para apresentações e debates</p>
-        </div>
-
-        <div class="main-layout">
-            <div class="column">
-                <h2 class="column-title">⚙️ Configuração de Sessão</h2>
-                
-                <div class="form-group">
-                    <label>Sessão Atual:</label>
-                    <select id="sessionSelector" style="width: 100%;" onchange="loadSelectedSession()"></select>
-                </div>
-                <div class="session-control-group">
-                    <button class="btn btn-primary" onclick="saveCurrentSession()">💾 Gravar Sessão</button>
-                    <button class="btn btn-danger" onclick="deleteSelectedSession()">🗑️ Apagar Sessão</button>
-                </div>
-
-                <hr style="border: 1px solid #333; margin: 25px 0;">
-
-                <h3 style="color: #ffffff; margin-bottom: 15px; font-size: 1.1rem;">➕ Adicionar Participante</h3>
-
-                <div class="form-group">
-                    <label>Nome do Participante:</label>
-                    <input type="text" id="participantName" placeholder="Deixe vazio para auto-gerar" style="width: 100%;">
-                </div>
-                
-                <div class="form-group">
-                    <label>Tempo:</label>
-                    <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
-                        <input type="number" id="participantMinutes" placeholder="Min" min="0" max="59" value="0" style="flex: 1;">
-                        <span style="color: #fff;">:</span>
-                        <input type="number" id="participantSeconds" placeholder="Seg" min="0" max="59" value="0" style="flex: 1;">
-                    </div>
-                </div>
-
-                <div class="form-group" style="flex-wrap: wrap; gap: 8px;">
-                    <button class="btn btn-secondary" onclick="addTime(1, 0)" style="flex: 1; min-width: 80px;">+1min</button>
-                    <button class="btn btn-secondary" onclick="addTime(5, 0)" style="flex: 1; min-width: 80px;">+5min</button>
-                    <button class="btn btn-secondary" onclick="addTime(10, 0)" style="flex: 1; min-width: 80px;">+10min</button>
-                    <button class="btn btn-secondary" onclick="addTime(30, 0)" style="flex: 1; min-width: 80px;">+30min</button>
-                    <button class="btn btn-danger" onclick="clearTime()" style="width: 100%; margin-top: 5px;">Limpar</button>
-                </div>
-                
-                <button class="btn btn-primary" onclick="addParticipant()" style="width: 100%; margin-top: 10px;">Adicionar Participante</button>
-
-                <hr style="border: 1px solid #333; margin: 25px 0;">
-
-                <h3 style="color: #ffffff; margin-bottom: 15px; font-size: 1.1rem;">🚨 Configurações de Alerta</h3>
-                
-                <div class="form-group">
-                    <label>Alerta Amarelo (segundos restantes):</label>
-                    <input type="number" id="yellowAlert" value="60" min="0" style="width: 100%;">
-                </div>
-
-                <div class="form-group">
-                    <label>Alerta Vermelho (segundos restantes):</label>
-                    <input type="number" id="redAlert" value="30" min="0" style="width: 100%;">
-                </div>
-
-                <div class="form-group">
-                    <label>Tipo de Alerta:</label>
-                    <select id="alertType" style="width: 100%;">
-                        <option value="text">Apenas Texto</option>
-                        <option value="background">Fundo</option>
-                        <option value="both">Texto + Fundo</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="column">
-                <h2 class="column-title">🎛️ Controlo da Sessão</h2>
-                
-                <div class="current-session" id="sessionDisplay">
-                    <div class="current-speaker" id="currentSpeaker">Selecione um participante</div>
-                    <div class="current-time" id="currentTime">00:00</div>
-                    <div id="sessionStatus">Sessão não iniciada</div>
-                </div>
-
-                <div class="controls">
-                    <button class="btn btn-success" onclick="startTimer()" id="startBtn" disabled>▶️ Iniciar</button>
-                    <button class="btn btn-warning" onclick="pauseTimer()" id="pauseBtn" disabled>⏸️ Pausar</button>
-                    <button class="btn btn-danger" onclick="resetTimer()" id="resetBtn" disabled>⏹️ Reset</button>
-                </div>
-
-                <div class="controls">
-                    <button class="btn btn-secondary" onclick="previousParticipant()" id="previousBtn" disabled>⏮️ Anterior</button>
-                    <button class="btn btn-secondary" onclick="nextParticipant()" id="nextBtn" disabled>⏭️ Próximo</button>
-                </div>
-
-                <div class="form-group" style="justify-content: center; margin-top: 20px; flex-wrap: wrap;">
-                    <label style="width: 100%; text-align: center; margin-bottom: 10px;">Ajustar Tempo:</label>
-                    <button class="btn btn-secondary" onclick="adjustTime(-30)" id="adjustMinus30Btn" disabled>-30s</button>
-                    <button class="btn btn-secondary" onclick="adjustTime(-10)" id="adjustMinus10Btn" disabled>-10s</button>
-                    <button class="btn btn-secondary" onclick="adjustTime(10)" id="adjustPlus10Btn" disabled>+10s</button>
-                    <button class="btn btn-secondary" onclick="adjustTime(30)" id="adjustPlus30Btn" disabled>+30s</button>
-                </div>
-
-                <div class="message-input-group">
-                    <h3 style="color: #ffffff; margin-bottom: 10px; font-size: 1.1rem; text-align: center;">💬 Enviar Mensagem para o Ecrã</h3>
-                    <input type="text" id="displayMessageInput" class="message-input" placeholder="Carregue Enter para enviar mensagem">
-                </div>
-            </div>
-
-            <div class="column">
-                <h2 class="column-title">🎮 Modo de Operação</h2>
-                
-                <div class="mode-selector">
-                    <div class="mode-btn active" onclick="setMode('individual')">
-                        <strong>Individual</strong><br>
-                        <small>Um orador</small>
-                    </div>
-                    <div class="mode-btn" onclick="setMode('debate')">
-                        <strong>Debate</strong><br>
-                        <small>Todos visíveis</small>
-                    </div>
-                </div>
-
-                <h3 style="color: #ffffff; margin: 20px 0 15px 0; font-size: 1.1rem;">👥 Participantes</h3>
-                
-                <div class="participants-list" id="participantsList">
-                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
-                </div>
-
-                <button class="btn btn-danger" onclick="clearAllParticipants()" style="width: 100%; margin-top: 20px;">Limpar Lista de Participantes</button>
-            </div>
-        </div>
-    </div>
-
-    <button class="display-window-btn" onclick="openDisplayWindow()" title="Abrir Ecrã de Apresentação">
-        📺
-    </button>
-
-    <script>
-        // Estado da aplicação
-        let participants = [];
-        let currentParticipantIndex = 0;
-        let currentMode = 'individual';
-        let isRunning = false;
-        let isPaused = false;
-        let currentTime = 0; // Pode ser negativo agora
-        let timerInterval = null;
-        let displayWindow = null;
-        let currentMessage = ""; // Para armazenar a mensagem para o display
-
-        // Sessões
-        let sessions = {}; // Armazena todas as sessões guardadas
-        let currentSessionName = 'Nova Sessão'; // Nome da sessão atualmente ativa/carregada
-
-        // Paleta de cores para participantes - cores vibrantes e distintas
-        const participantColors = [
-            '#667eea', // Amethyst (Azul/Roxo)
-            '#48bb78', // Emerald (Verde)
-            '#ed8936', // Orange (Laranja)
-            '#f56565', // Red (Vermelho)
-            '#4299e1', // Blue (Azul)
-            '#ecc94b', // Yellow (Amarelo)
-            '#9f7aea', // Purple (Roxo)
-            '#a0aec0', // Gray (Cinza)
-            '#e53e3e', // Rose (Vermelho Escuro)
-            '#38b2ac', // Teal (Verde Azulado)
-            '#d69e2e', // Gold (Dourado)
-            '#b794f4'  // Lavender (Lilás)
-        ];
-        let colorIndex = 0; // Para ciclar as cores
-
-        // Configurações de alerta
-        let alertSettings = {
-            yellow: 60,
-            red: 30,
-            type: 'text'
-        };
-
-        // --- Funções de Gestão de Sessões ---
-
-        // Carrega todas as sessões do Local Storage
-        function loadSessions() {
-            const savedSessions = localStorage.getItem('presentationTimerSessions');
-            if (savedSessions) {
-                sessions = JSON.parse(savedSessions);
-            } else {
-                sessions = {};
-            }
-            updateSessionSelector();
-        }
-
-        // Guarda todas as sessões no Local Storage
-        function saveSessions() {
-            localStorage.setItem('presentationTimerSessions', JSON.stringify(sessions));
-            updateSessionSelector(); // Atualiza o seletor após salvar
-        }
-
-        // Atualiza o dropdown do seletor de sessões
-        function updateSessionSelector() {
-            const selector = document.getElementById('sessionSelector');
-            selector.innerHTML = ''; // Limpa as opções existentes
-
-            // Adiciona a opção "Nova Sessão" sempre no topo
-            const newSessionOption = document.createElement('option');
-            newSessionOption.value = 'Nova Sessão';
-            newSessionOption.textContent = 'Nova Sessão';
-            selector.appendChild(newSessionOption);
-
-            // Adiciona as sessões guardadas, ordenadas numericamente
-            const sortedSessionNames = Object.keys(sessions).sort((a, b) => {
-                const numA = parseInt(a.replace('Sessão ', '')) || 0;
-                const numB = parseInt(b.replace('Sessão ', '')) || 0;
-                return numA - numB;
-            });
-
-            sortedSessionNames.forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                selector.appendChild(option);
-            });
-
-            // Seleciona a sessão atualmente carregada ou "Nova Sessão"
-            selector.value = currentSessionName;
-            if (selector.value !== currentSessionName) {
-                selector.value = 'Nova Sessão'; // Se a sessão atual não existe mais, seleciona nova sessão
-                currentSessionName = 'Nova Sessão';
-            }
-        }
-
-        // Gera o próximo nome sequencial para uma nova sessão
-        function getNextSessionName() {
-            let nextNumber = 1;
-            const existingNumbers = Object.keys(sessions)
-                .filter(name => name.startsWith('Sessão '))
-                .map(name => parseInt(name.replace('Sessão ', '')))
-                .filter(num => !isNaN(num))
-                .sort((a, b) => a - b);
-
-            for (let i = 0; i < existingNumbers.length; i++) {
-                if (existingNumbers[i] === nextNumber) {
-                    nextNumber++;
-                } else {
-                    break;
-                }
-            }
-            return `Sessão ${nextNumber}`;
-        }
-
-        // Grava a sessão atual
-        function saveCurrentSession() {
-            pauseTimer(); // Pausa o timer antes de salvar
-
-            // Se a sessão atual é "Nova Sessão" e não está vazia, gera um novo nome
-            if (currentSessionName === 'Nova Sessão' && participants.length > 0) {
-                currentSessionName = getNextSessionName();
-            } else if (currentSessionName === 'Nova Sessão' && participants.length === 0) {
-                 alert('Não há participantes para salvar nesta nova sessão.');
-                 return;
-            }
-
-            sessions[currentSessionName] = {
-                participants: participants.map(p => ({ ...p, status: 'ready' })), // Salva todos como 'ready'
-                alertSettings: { ...alertSettings }
-            };
-            saveSessions();
-            alert(`Sessão "${currentSessionName}" salva com sucesso!`);
-            document.getElementById('sessionSelector').value = currentSessionName; // Garante que a sessão salva está selecionada
-        }
-
-        // Carrega a sessão selecionada no dropdown
-        function loadSelectedSession() {
-            const selectedName = document.getElementById('sessionSelector').value;
-            
-            if (selectedName === 'Nova Sessão') {
-                if (confirm('Deseja iniciar uma nova sessão? Os participantes atuais serão perdidos.')) {
-                    clearAllParticipants(false); // Limpa participantes sem confirmação de limpeza geral
-                    currentSessionName = 'Nova Sessão';
-                    alertSettings = { yellow: 60, red: 30, type: 'text' }; // Reseta configs de alerta
-                    updateAlertSettingsDisplay();
-                    updateDisplay();
-                    updateDisplayWindow();
-                    updateControlButtons();
-                } else {
-                    document.getElementById('sessionSelector').value = currentSessionName; // Volta para a sessão anterior
-                }
-                return;
-            }
-
-            if (sessions[selectedName]) {
-                if (confirm(`Deseja carregar a sessão "${selectedName}"? A sessão atual será perdida.`)) {
-                    pauseTimer(); // Pausa qualquer timer em execução
-                    currentSessionName = selectedName;
-                    const loadedSession = sessions[selectedName];
-                    participants = loadedSession.participants.map(p => ({ ...p })); // Clona para não modificar a versão salva
-                    
-                    // Resetar o estado dos participantes ao carregar (todos como "ready", tempo restante para o tempo inicial)
-                    participants.forEach(p => {
-                        p.remainingTime = p.timeSeconds;
-                        p.status = 'ready';
-                    });
-
-                    // Carrega configurações de alerta
-                    alertSettings = { ...loadedSession.alertSettings };
-                    updateAlertSettingsDisplay(); // Atualiza os campos de input de alerta
-
-                    currentParticipantIndex = 0;
-                    if (participants.length > 0) {
-                        currentTime = participants[0].remainingTime;
-                    } else {
-                        currentTime = 0;
-                    }
-
-                    updateParticipantsList();
-                    updateDisplay();
-                    updateDisplayWindow();
-                    updateControlButtons();
-                    alert(`Sessão "${selectedName}" carregada com sucesso!`);
-                } else {
-                    document.getElementById('sessionSelector').value = currentSessionName; // Volta para a sessão anterior
-                }
-            }
-        }
-
-        // Apaga a sessão selecionada no dropdown
-        function deleteSelectedSession() {
-            const selectedName = document.getElementById('sessionSelector').value;
-            
-            if (selectedName === 'Nova Sessão') {
-                alert('Não é possível apagar a sessão "Nova Sessão".');
-                return;
-            }
-
-            if (confirm(`Tem certeza que deseja apagar a sessão "${selectedName}"? Esta ação não pode ser desfeita.`)) {
-                pauseTimer(); // Pausa o timer
-                delete sessions[selectedName];
-                saveSessions();
-                
-                // Se a sessão apagada era a atualmente carregada, volte para "Nova Sessão"
-                if (currentSessionName === selectedName) {
-                    currentSessionName = 'Nova Sessão';
-                    clearAllParticipants(false); // Limpa os participantes da tela atual
-                    alertSettings = { yellow: 60, red: 30, type: 'text' }; // Reseta configs de alerta
-                    updateAlertSettingsDisplay();
-                }
-                updateSessionSelector(); // Atualiza o dropdown
-                updateDisplay();
-                updateDisplayWindow();
-                updateControlButtons();
-                alert(`Sessão "${selectedName}" apagada com sucesso.`);
-            }
-        }
-
-        // Atualiza os campos de input de alerta com as configurações atuais
-        function updateAlertSettingsDisplay() {
-            document.getElementById('yellowAlert').value = alertSettings.yellow;
-            document.getElementById('redAlert').value = alertSettings.red;
-            document.getElementById('alertType').value = alertSettings.type;
-        }
-
-        // --- Funções Existentes (Com Pequenas Modificações) ---
-
-        // Adicionar tempo aos campos
-        function addTime(minutes, seconds) {
-            const minField = document.getElementById('participantMinutes');
-            const secField = document.getElementById('participantSeconds');
-            
-            let currentMin = parseInt(minField.value) || 0;
-            let currentSec = parseInt(secField.value) || 0;
-            
-            currentMin += minutes;
-            currentSec += seconds;
-            
-            if (currentSec >= 60) {
-                currentMin += Math.floor(currentSec / 60);
-                currentSec = currentSec % 60;
-            } else if (currentSec < 0) {
-                currentMin += Math.ceil(currentSec / 60); 
-                currentSec = currentSec % 60 + 60; 
-            }
-            
-            minField.value = Math.max(0, currentMin);
-            secField.value = Math.max(0, currentSec);
-        }
-
-        // Limpar campos de tempo
-        function clearTime() {
-            document.getElementById('participantMinutes').value = '0';
-            document.getElementById('participantSeconds').value = '0';
-        }
-
-        // Adicionar participante (Atualizado para numeração sequencial sem lacunas e cores)
-        function addParticipant() {
-            let name = document.getElementById('participantName').value.trim();
-            const minutes = parseInt(document.getElementById('participantMinutes').value) || 0;
-            const seconds = parseInt(document.getElementById('participantSeconds').value) || 0;
-
-            if (minutes === 0 && seconds === 0 && !name) {
-                 alert('Por favor, defina um tempo para o participante, ou insira um nome para auto-gerar o tempo padrão (00:00).');
-                 return;
-            }
-            if (minutes < 0 || seconds < 0) {
-                alert('Os minutos e segundos não podem ser negativos.');
-                return;
-            }
-
-            let nextParticipantNumber = 1;
-            const existingNumbers = participants
-                .filter(p => p.name.startsWith('Participante '))
-                .map(p => parseInt(p.name.replace('Participante ', '')))
-                .filter(num => !isNaN(num))
-                .sort((a, b) => a - b);
-
-            for (let i = 0; i < existingNumbers.length; i++) {
-                if (existingNumbers[i] === nextParticipantNumber) {
-                    nextParticipantNumber++;
-                } else {
-                    break;
-                }
-            }
-
-            if (!name) {
-                name = `Participante ${nextParticipantNumber}`;
-            }
-
-            const totalSeconds = (minutes * 60) + seconds;
-            
-            const assignedColor = participantColors[colorIndex % participantColors.length];
-            colorIndex++; 
-
-            const participant = {
-                id: Date.now(),
-                name: name,
-                timeMinutes: minutes,
-                timeSeconds: totalSeconds,
-                remainingTime: totalSeconds,
-                status: 'ready',
-                color: assignedColor 
-            };
-
-            participants.push(participant);
-            updateParticipantsList();
-            
-            document.getElementById('participantName').value = '';
-            document.getElementById('participantMinutes').value = '0';
-            document.getElementById('participantSeconds').value = '0';
-
-            updateControlButtons(); 
-            updateDisplayWindow(); 
-        }
-
-        // Atualizar lista de participantes (com botão "Iniciar" e ícone de remover)
-        function updateParticipantsList() {
-            const list = document.getElementById('participantsList');
-            
-            if (participants.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>';
-                return;
-            }
-
-            list.innerHTML = participants.map((participant, index) => {
-                const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
-                const displaySeconds = Math.abs(participant.remainingTime) % 60;
-                const sign = participant.remainingTime < 0 ? '-' : '';
-
-                return `
-                    <div class="participant-item">
-                        <div class="participant-info">
-                            <span class="status-indicator status-${participant.status}"></span>
-                            <div class="participant-color-indicator" style="background-color: ${participant.color};"></div>
-                            <span class="participant-name">${participant.name}</span>
-                            <span class="participant-time">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</span>
-                        </div>
-                        <div>
-                            <button class="btn btn-success" onclick="selectAndStartParticipant(${index})" style="padding: 5px 10px; font-size: 12px;">Iniciar</button>
-                            <button class="btn btn-danger btn-delete-small" onclick="removeParticipant(${index})" title="Remover Participante">✖️</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Remover participante
-        function removeParticipant(index) {
-            if (confirm('Tem certeza que deseja remover este participante?')) { // Confirmação aqui
-                if (index === currentParticipantIndex && isRunning) {
-                    pauseTimer();
-                }
-
-                participants.splice(index, 1);
-                
-                if (currentParticipantIndex >= participants.length) {
-                    currentParticipantIndex = Math.max(0, participants.length - 1);
-                }
-                if (participants.length > 0) {
-                    currentTime = participants[currentParticipantIndex].remainingTime;
-                } else {
-                    currentTime = 0;
-                    currentParticipantIndex = 0; 
-                }
-
-                updateParticipantsList();
-                updateDisplay();
-                updateDisplayWindow(); 
-                updateControlButtons(); 
-            }
-        }
-
-        // Limpar todos os participantes (com novo parâmetro para evitar confirmação múltipla)
-        function clearAllParticipants(askConfirmation = true) {
-            if (askConfirmation) {
-                if (!confirm('Tem certeza que deseja remover TODOS os participantes? Esta ação não pode ser desfeita.')) {
-                    return;
-                }
-            }
-            pauseTimer(); 
-            participants = [];
-            currentParticipantIndex = 0;
-            currentTime = 0;
-            colorIndex = 0; 
-            updateParticipantsList();
-            updateDisplay();
-            updateDisplayWindow(); 
-            updateControlButtons();
-        }
-
-        // Função para selecionar e iniciar o participante
-        function selectAndStartParticipant(index) {
-            if (isRunning && currentParticipantIndex === index) {
-                pauseTimer();
-            } else {
-                if (isRunning) { 
-                    pauseTimer();
-                }
-                selectParticipant(index, true); 
-            }
-        }
-
-        // Selecionar participante (agora com opção de iniciar)
-        function selectParticipant(index, shouldStart = false) {
-            if (participants[currentParticipantIndex] && currentParticipantIndex !== index) {
-                if (participants[currentParticipantIndex].remainingTime > 0) {
-                    participants[currentParticipantIndex].status = 'ready';
-                } else {
-                    participants[currentParticipantIndex].status = 'finished';
-                }
-            }
-
-            currentParticipantIndex = index;
-            currentTime = participants[index].remainingTime;
-            participants[currentParticipantIndex].status = 'ready'; 
-
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList(); 
-
-            if (shouldStart) {
-                startTimer();
-            } else {
-                updateControlButtons(); 
-            }
-        }
-
-        // Definir modo
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            const clickedButton = event.target.closest('.mode-btn'); 
-            if (clickedButton) {
-                clickedButton.classList.add('active');
-            }
-            updateDisplayWindow();
-        }
-
-        // Iniciar temporizador
-        function startTimer() {
-            if (participants.length === 0) {
-                alert('Adicione pelo menos um participante antes de iniciar.');
-                return;
-            }
-            if (currentParticipantIndex === undefined || currentParticipantIndex < 0 || currentParticipantIndex >= participants.length) {
-                currentParticipantIndex = 0;
-                currentTime = participants[currentParticipantIndex].remainingTime;
-            }
-
-            if (isRunning && !isPaused) return; 
-
-            isRunning = true;
-            isPaused = false;
-            
-            if (participants[currentParticipantIndex]) {
-                participants[currentParticipantIndex].status = 'active';
-            }
-
-            timerInterval = setInterval(() => {
-                currentTime--;
-                if (participants[currentParticipantIndex]) {
-                    participants[currentParticipantIndex].remainingTime = currentTime;
-                }
-                updateDisplay();
-                updateDisplayWindow();
-                updateParticipantsList(); 
-            }, 1000);
-
-            updateDisplay();
-            updateDisplayWindow(); 
-            updateControlButtons(); 
-        }
-
-        // Pausar temporizador
-        function pauseTimer() {
-            isRunning = false;
-            isPaused = true;
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            if (participants[currentParticipantIndex]) {
-                participants[currentParticipantIndex].status = 'ready'; 
-            }
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
-            updateControlButtons(); 
-        }
-
-        // Reset temporizador
-        function resetTimer() {
-            isRunning = false;
-            isPaused = false;
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-
-            participants.forEach(participant => {
-                participant.remainingTime = participant.timeSeconds;
-                participant.status = 'ready';
-            });
-
-            if (participants.length > 0) {
-                currentTime = participants[currentParticipantIndex].remainingTime;
-            } else {
-                currentTime = 0; 
-            }
-
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
-            updateControlButtons(); 
-        }
-
-        // Navegar participantes
-        function previousParticipant() {
-            if (participants.length === 0) return;
-            
-            if (isRunning) {
-                pauseTimer(); 
-            }
-            if (participants[currentParticipantIndex] && participants[currentParticipantIndex].remainingTime <= 0) {
-                 participants[currentParticipantIndex].status = 'finished';
-            } else if (participants[currentParticipantIndex]) {
-                 participants[currentParticipantIndex].status = 'ready';
-            }
-
-            currentParticipantIndex = currentParticipantIndex > 0 ? currentParticipantIndex - 1 : participants.length - 1;
-            currentTime = participants[currentParticipantIndex].remainingTime;
-            participants[currentParticipantIndex].status = 'ready'; 
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
-            updateControlButtons(); 
-        }
-
-        function nextParticipant() {
-            if (participants.length === 0) return;
-            
-            if (isRunning) {
-                pauseTimer(); 
-            }
-            if (participants[currentParticipantIndex] && participants[currentParticipantIndex].remainingTime <= 0) {
-                participants[currentParticipantIndex].status = 'finished';
-            } else if (participants[currentParticipantIndex]) {
-                participants[currentParticipantIndex].status = 'ready';
-            }
-
-            currentParticipantIndex = (currentParticipantIndex + 1) % participants.length;
-            currentTime = participants[currentParticipantIndex].remainingTime;
-            participants[currentParticipantIndex].status = 'ready'; 
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
-            updateControlButtons(); 
-        }
-
-        // Ajustar tempo
-        function adjustTime(seconds) {
-            if (participants.length === 0) return;
-            
-            currentTime = currentTime + seconds; 
-            participants[currentParticipantIndex].remainingTime = currentTime;
-            updateDisplay();
-            updateDisplayWindow();
-            updateParticipantsList();
-        }
-
-        // Atualizar display principal (melhorado com alertas e tempo negativo)
-        function updateDisplay() {
-            alertSettings.yellow = parseInt(document.getElementById('yellowAlert').value) || 0;
-            alertSettings.red = parseInt(document.getElementById('redAlert').value) || 0;
-            alertSettings.type = document.getElementById('alertType').value;
-
-            const speakerEl = document.getElementById('currentSpeaker');
-            const timeEl = document.getElementById('currentTime');
-            const statusEl = document.getElementById('sessionStatus');
-
-            if (participants.length === 0 || currentParticipantIndex === undefined || currentParticipantIndex < 0 || currentParticipantIndex >= participants.length) {
-                speakerEl.textContent = 'Selecione um participante';
-                timeEl.textContent = '00:00';
-                timeEl.className = 'current-time'; 
-                statusEl.textContent = 'Sessão não iniciada';
-                return;
-            }
-
-            const participant = participants[currentParticipantIndex];
-            const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
-            const displaySeconds = Math.abs(currentTime) % 60;
-            const sign = currentTime < 0 ? '-' : '';
-            
-            speakerEl.textContent = participant.name;
-            timeEl.textContent = `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}`;
-            
-            let timeClass = 'current-time time-green'; 
-            if (currentTime <= alertSettings.red) {
-                timeClass = 'current-time time-red';
-            } else if (currentTime <= alertSettings.yellow) {
-                timeClass = 'current-time time-yellow';
-            }
-            if (currentTime < 0) {
-                timeClass += ' time-negative';
-            }
-            timeEl.className = timeClass; 
-
-            if (isRunning) {
-                statusEl.textContent = '🔴 Em execução';
-            } else if (isPaused) {
-                statusEl.textContent = '⏸️ Pausado';
-            } else {
-                statusEl.textContent = '⏹️ Parado';
-            }
-        }
-
-        // Função para controlar a habilitação/desabilitação dos botões
-        function updateControlButtons() {
-            const hasParticipants = participants.length > 0;
-            const isCurrentlySelected = hasParticipants && currentParticipantIndex !== undefined && currentParticipantIndex >= 0 && currentParticipantIndex < participants.length;
-
-            document.getElementById('startBtn').disabled = !isCurrentlySelected || isRunning;
-            document.getElementById('pauseBtn').disabled = !isCurrentlySelected || !isRunning || isPaused;
-            document.getElementById('resetBtn').disabled = !hasParticipants;
-            
-            document.getElementById('previousBtn').disabled = !hasParticipants;
-            document.getElementById('nextBtn').disabled = !hasParticipants;
-
-            document.getElementById('adjustMinus30Btn').disabled = !isCurrentlySelected;
-            document.getElementById('adjustMinus10Btn').disabled = !isCurrentlySelected;
-            document.getElementById('adjustPlus10Btn').disabled = !isCurrentlySelected;
-            document.getElementById('adjustPlus30Btn').disabled = !isCurrentlySelected;
-        }
-
-        // Enviar mensagem para o display externo
-        function sendMessageToDisplay(message) {
-            currentMessage = message;
-            updateDisplayWindow(); 
-        }
-
-        // Abrir janela de display
-        function openDisplayWindow() {
-            if (displayWindow && !displayWindow.closed) {
-                displayWindow.focus();
-                updateDisplayWindow(); 
-                return;
-            }
-
-            displayWindow = window.open('', 'displayWindow', 'width=1024,height=768,resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no');
-            
-            if (!displayWindow) {
-                alert("O pop-up do display foi bloqueado pelo seu navegador. Por favor, permita pop-ups para este site.");
-                return;
-            }
-
-            displayWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="pt">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Temporizador - Display</title>
-                    <style>
-                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body {
-                            background: #1a202c;
-                            color: white;
-                            font-family: 'Segoe UI', Arial, sans-serif;
-                            height: 100vh;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            overflow: hidden;
-                            transition: background-color 0.5s ease; 
-                            flex-direction: column; 
-                            padding: 20px; 
-                        }
-                        .display-container {
-                            text-align: center;
-                            width: 100%;
-                            flex-grow: 1; 
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: center;
-                            align-items: center;
-                        }
-                        .speaker-name {
-                            font-size: 3rem;
-                            font-weight: 700;
-                            margin-bottom: 30px;
-                            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-                        }
-                        .time-display {
-                            font-size: 18vw;
-                            font-weight: 700;
-                            font-family: 'Courier New', monospace;
-                            text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
-                            margin: 0;
-                            line-height: 0.8;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                        }
-                        .time-green { color: #48bb78; }
-                        .time-yellow { color: #ed8936; }
-                        .time-red { color: #f56565; }
-                        .time-negative { color: #f56565; }
-                        .status-display {
-                            font-size: 1.5rem;
-                            opacity: 0.8;
-                            margin-top: 20px;
-                        }
-                        .debate-grid {
-                            display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); 
-                            gap: 25px; 
-                            width: 100%;
-                            max-width: 100%; 
-                            align-items: stretch; 
-                            justify-content: center;
-                            flex-grow: 1; 
-                            padding: 10px; 
-                        }
-                        .debate-participant {
-                            background: rgba(255,255,255,0.08); 
-                            border-radius: 20px; 
-                            padding: 30px; 
-                            text-align: center;
-                            border: 5px solid transparent; 
-                            transition: border-color 0.3s, background-color 0.3s, transform 0.2s;
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: space-between;
-                            min-height: 200px; 
-                            box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
-                        }
-                        .debate-participant.active {
-                            border-width: 8px; 
-                            background: rgba(237,137,54,0.25); 
-                            transform: scale(1.03); 
-                        }
-                        .debate-name {
-                            font-size: 2.5rem; 
-                            font-weight: 700; 
-                            margin-bottom: 15px; 
-                            word-break: break-word; 
-                            line-height: 1.2;
-                        }
-                        .debate-time {
-                            font-size: 6rem; 
-                            font-weight: 700;
-                            font-family: 'Courier New', monospace;
-                            flex-grow: 1; 
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            line-height: 1; 
-                        }
-                        .message-area {
-                            width: 100%;
-                            min-height: 60px; 
-                            background-color: rgba(255, 255, 255, 0.15); 
-                            border-top: 3px solid #667eea; 
-                            padding: 20px; 
-                            text-align: center;
-                            font-size: 2rem; 
-                            font-weight: 700; 
-                            margin-top: 25px; 
-                            border-radius: 12px; 
-                            word-wrap: break-word; 
-                            box-shadow: 0 -8px 20px rgba(0,0,0,0.3); 
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="display-container" id="displayContainer">
-                        <div class="speaker-name" id="displaySpeaker">Aguardando...</div>
-                        <div class="time-display" id="displayTime">00:00</div>
-                        <div class="status-display" id="displayStatus">Sistema iniciado</div>
-                    </div>
-                    <div class="message-area" id="displayMessageArea"></div>
-                </body>
-                </html>
-            `);
-
-            displayWindow.document.close();
-            updateDisplayWindow();
-        }
-
-        // Atualizar janela de display
-        function updateDisplayWindow() {
-            if (!displayWindow || displayWindow.closed) {
-                return;
-            }
-
-            const container = displayWindow.document.getElementById('displayContainer');
-            const messageArea = displayWindow.document.getElementById('displayMessageArea');
-            
-            const currentYellowAlert = parseInt(document.getElementById('yellowAlert').value) || 0;
-            const currentRedAlert = parseInt(document.getElementById('redAlert').value) || 0;
-            const currentAlertType = document.getElementById('alertType').value;
-
-            container.innerHTML = '';
-            
-            if (messageArea) {
-                messageArea.textContent = currentMessage;
-            }
-
-            if (currentMode === 'individual') {
-                const participant = participants[currentParticipantIndex];
-                const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
-                const displaySeconds = Math.abs(currentTime) % 60;
-                const sign = currentTime < 0 ? '-' : '';
-
-                let timeClass = 'time-green';
-                
-                if (currentTime <= currentRedAlert) {
-                    timeClass = 'time-red';
-                } else if (currentTime <= currentYellowAlert) {
-                    timeClass = 'time-yellow';
-                }
-
-                if (currentTime < 0) {
-                    timeClass += ' time-negative';
-                }
-
-                container.innerHTML = `
-                    <div class="speaker-name" id="displaySpeaker">${participant ? participant.name : 'Aguardando...'}</div>
-                    <div class="time-display ${timeClass}" id="displayTime">${participant ? `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}` : '00:00'}</div>
-                    <div class="status-display" id="displayStatus">${isRunning ? '🔴 Em execução' : (isPaused ? '⏸️ Pausado' : '⏹️ Parado')}</div>
-                `;
-                
-                if (currentAlertType === 'background' || currentAlertType === 'both') {
-                    if (currentTime <= currentRedAlert) {
-                        displayWindow.document.body.style.backgroundColor = '#4a0e0e';
-                    } else if (currentTime <= currentYellowAlert) {
-                        displayWindow.document.body.style.backgroundColor = '#4a320e';
-                    } else {
-                        displayWindow.document.body.style.backgroundColor = '#1a202c';
-                    }
-                } else {
-                    displayWindow.document.body.style.backgroundColor = '#1a202c';
-                }
-
-            } else if (currentMode === 'debate') {
-                const debateParticipantsHtml = participants.map((participant, index) => {
-                    const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
-                    const displaySeconds = Math.abs(participant.remainingTime) % 60;
-                    const sign = participant.remainingTime < 0 ? '-' : '';
-
-                    let timeClass = '';
-                    
-                    if (participant.remainingTime <= currentRedAlert) {
-                        timeClass = 'time-red';
-                    } else if (participant.remainingTime <= currentYellowAlert) {
-                        timeClass = 'time-yellow';
-                    } else {
-                        timeClass = 'time-green';
-                    }
-
-                    if (participant.remainingTime < 0) {
-                        timeClass += ' time-negative';
-                    }
-
-                    const isActive = index === currentParticipantIndex && isRunning;
-                    return `
-                        <div class="debate-participant ${isActive ? 'active' : ''}" style="border-color: ${participant.color};">
-                            <div class="debate-name">${participant.name}</div>
-                            <div class="debate-time ${timeClass}">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</div>
-                        </div>
-                    `;
-                }).join('');
-
-                container.innerHTML = `
-                    <div class="debate-grid">
-                        ${debateParticipantsHtml}
-                    </div>
-                `;
-                displayWindow.document.body.style.backgroundColor = '#1a202c'; 
-            }
-        }
-
-        // Inicializa a exibição ao carregar a página
-        document.addEventListener('DOMContentLoaded', () => {
-            loadSessions(); // Carrega as sessões ao iniciar
-            updateParticipantsList();
-            updateDisplay();
-            updateControlButtons(); 
-            updateAlertSettingsDisplay(); // Garante que os campos de alerta exibem os valores corretos ao carregar
-
-            const messageInput = document.getElementById('displayMessageInput');
-            if (messageInput) {
-                messageInput.addEventListener('keypress', function(event) {
-                    if (event.key === 'Enter') {
-                        event.preventDefault(); 
-                        sendMessageToDisplay(this.value);
-                        this.value = ''; 
-                    }
-                });
-            }
-        });
-    </script>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Temporizador de Apresentações</h1>
+            <p>Sistema profissional de gestão de tempo para apresentações e debates</p>
+        </div>
+
+        <div class="main-layout">
+            <div class="column">
+                <h2 class="column-title">⚙️ Configuração de Sessão</h2>
+                
+                <div class="form-group">
+                    <label>Sessão Atual:</label>
+                    <select id="sessionSelector" style="width: 100%;" onchange="loadSelectedSession()"></select>
+                </div>
+                <div class="session-control-group">
+                    <button class="btn btn-primary" onclick="saveCurrentSession()">💾 Gravar Sessão</button>
+                    <button class="btn btn-danger" onclick="deleteSelectedSession()">🗑️ Apagar Sessão</button>
+                </div>
+
+                <hr style="border: 1px solid #333; margin: 25px 0;">
+
+                <h3 style="color: #ffffff; margin-bottom: 15px; font-size: 1.1rem;">➕ Adicionar Participante</h3>
+
+                <div class="form-group">
+                    <label>Nome do Participante:</label>
+                    <input type="text" id="participantName" placeholder="Deixe vazio para auto-gerar" style="width: 100%;">
+                </div>
+                
+                <div class="form-group">
+                    <label>Tempo:</label>
+                    <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+                        <input type="number" id="participantMinutes" placeholder="Min" min="0" max="59" value="0" style="flex: 1;">
+                        <span style="color: #fff;">:</span>
+                        <input type="number" id="participantSeconds" placeholder="Seg" min="0" max="59" value="0" style="flex: 1;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="flex-wrap: wrap; gap: 8px;">
+                    <button class="btn btn-secondary" onclick="addTime(1, 0)" style="flex: 1; min-width: 80px;">+1min</button>
+                    <button class="btn btn-secondary" onclick="addTime(5, 0)" style="flex: 1; min-width: 80px;">+5min</button>
+                    <button class="btn btn-secondary" onclick="addTime(10, 0)" style="flex: 1; min-width: 80px;">+10min</button>
+                    <button class="btn btn-secondary" onclick="addTime(30, 0)" style="flex: 1; min-width: 80px;">+30min</button>
+                    <button class="btn btn-danger" onclick="clearTime()" style="width: 100%; margin-top: 5px;">Limpar</button>
+                </div>
+                
+                <button class="btn btn-primary" onclick="addParticipant()" style="width: 100%; margin-top: 10px;">Adicionar Participante</button>
+
+                <hr style="border: 1px solid #333; margin: 25px 0;">
+
+                <h3 style="color: #ffffff; margin-bottom: 15px; font-size: 1.1rem;">🚨 Configurações de Alerta</h3>
+                
+                <div class="form-group">
+                    <label>Alerta Amarelo (segundos restantes):</label>
+                    <input type="number" id="yellowAlert" value="60" min="0" style="width: 100%;">
+                </div>
+
+                <div class="form-group">
+                    <label>Alerta Vermelho (segundos restantes):</label>
+                    <input type="number" id="redAlert" value="30" min="0" style="width: 100%;">
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de Alerta:</label>
+                    <select id="alertType" style="width: 100%;">
+                        <option value="text">Apenas Texto</option>
+                        <option value="background">Fundo</option>
+                        <option value="both">Texto + Fundo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="column">
+                <h2 class="column-title">🎮 Modo de Operação</h2>
+                
+                <div class="mode-selector">
+                    <div class="mode-btn active" onclick="setMode('individual')">
+                        <strong>Individual</strong><br>
+                        <small>Um orador</small>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('debate')">
+                        <strong>Debate</strong><br>
+                        <small>Todos visíveis</small>
+                    </div>
+                </div>
+
+                <h3 style="color: #ffffff; margin: 20px 0 15px 0; font-size: 1.1rem;">👥 Participantes</h3>
+                
+                <div class="participants-list" id="participantsList">
+                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
+                </div>
+
+                <button class="btn btn-danger" onclick="clearAllParticipants()" style="width: 100%; margin-top: 20px;">Limpar Lista de Participantes</button>
+            </div>
+
+            <div class="column">
+                <h2 class="column-title">🎛️ Controlo da Sessão</h2>
+                
+                <div class="current-session" id="sessionDisplay">
+                    <div class="current-speaker" id="currentSpeaker">Selecione um participante</div>
+                    <div class="current-time" id="currentTime">00:00</div>
+                    <div id="sessionStatus">Sessão não iniciada</div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-success" onclick="startTimer()" id="startBtn" disabled>▶️ Iniciar</button>
+                    <button class="btn btn-warning" onclick="pauseTimer()" id="pauseBtn" disabled>⏸️ Pausar</button>
+                    <button class="btn btn-danger" onclick="resetTimer()" id="resetBtn" disabled>⏹️ Reset</button>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-secondary" onclick="previousParticipant()" id="previousBtn" disabled>⏮️ Anterior</button>
+                    <button class="btn btn-secondary" onclick="nextParticipant()" id="nextBtn" disabled>⏭️ Próximo</button>
+                </div>
+
+                <div class="form-group" style="justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+                    <label style="width: 100%; text-align: center; margin-bottom: 10px;">Ajustar Tempo:</label>
+                    <button class="btn btn-secondary" onclick="adjustTime(-30)" id="adjustMinus30Btn" disabled>-30s</button>
+                    <button class="btn btn-secondary" onclick="adjustTime(-10)" id="adjustMinus10Btn" disabled>-10s</button>
+                    <button class="btn btn-secondary" onclick="adjustTime(10)" id="adjustPlus10Btn" disabled>+10s</button>
+                    <button class="btn btn-secondary" onclick="adjustTime(30)" id="adjustPlus30Btn" disabled>+30s</button>
+                </div>
+
+                <div class="message-input-group">
+                    <h3 style="color: #ffffff; margin-bottom: 10px; font-size: 1.1rem; text-align: center;">💬 Enviar Mensagem para o Ecrã</h3>
+                    <input type="text" id="displayMessageInput" class="message-input" placeholder="Carregue Enter para enviar mensagem">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="display-window-btn" onclick="openDisplayWindow()" title="Abrir Ecrã de Apresentação">
+        📺
+    </button>
+
+    <script>
+        // Estado da aplicação
+        let participants = [];
+        let currentParticipantIndex = 0;
+        let currentMode = 'individual';
+        let isRunning = false;
+        let isPaused = false;
+        let currentTime = 0; // Pode ser negativo agora
+        let timerInterval = null;
+        let displayWindow = null;
+        let currentMessage = ""; // Para armazenar a mensagem para o display
+
+        // Sessões
+        let sessions = {}; // Armazena todas as sessões guardadas
+        let currentSessionName = 'Nova Sessão'; // Nome da sessão atualmente ativa/carregada
+
+        // Paleta de cores para participantes - cores vibrantes e distintas
+        const participantColors = [
+            '#667eea', // Amethyst (Azul/Roxo)
+            '#48bb78', // Emerald (Verde)
+            '#ed8936', // Orange (Laranja)
+            '#f56565', // Red (Vermelho)
+            '#4299e1', // Blue (Azul)
+            '#ecc94b', // Yellow (Amarelo)
+            '#9f7aea', // Purple (Roxo)
+            '#a0aec0', // Gray (Cinza)
+            '#e53e3e', // Rose (Vermelho Escuro)
+            '#38b2ac', // Teal (Verde Azulado)
+            '#d69e2e', // Gold (Dourado)
+            '#b794f4'  // Lavender (Lilás)
+        ];
+        let colorIndex = 0; // Para ciclar as cores
+
+        // Configurações de alerta
+        let alertSettings = {
+            yellow: 60,
+            red: 30,
+            type: 'text'
+        };
+
+        // --- Funções de Gestão de Sessões ---
+
+        // Carrega todas as sessões do Local Storage
+        function loadSessions() {
+            const savedSessions = localStorage.getItem('presentationTimerSessions');
+            if (savedSessions) {
+                sessions = JSON.parse(savedSessions);
+            } else {
+                sessions = {};
+            }
+            updateSessionSelector();
+        }
+
+        // Guarda todas as sessões no Local Storage
+        function saveSessions() {
+            localStorage.setItem('presentationTimerSessions', JSON.stringify(sessions));
+            updateSessionSelector(); // Atualiza o seletor após salvar
+        }
+
+        // Atualiza o dropdown do seletor de sessões
+        function updateSessionSelector() {
+            const selector = document.getElementById('sessionSelector');
+            selector.innerHTML = ''; // Limpa as opções existentes
+
+            // Adiciona a opção "Nova Sessão" sempre no topo
+            const newSessionOption = document.createElement('option');
+            newSessionOption.value = 'Nova Sessão';
+            newSessionOption.textContent = 'Nova Sessão';
+            selector.appendChild(newSessionOption);
+
+            // Adiciona as sessões guardadas, ordenadas numericamente
+            const sortedSessionNames = Object.keys(sessions).sort((a, b) => {
+                const numA = parseInt(a.replace('Sessão ', '')) || 0;
+                const numB = parseInt(b.replace('Sessão ', '')) || 0;
+                return numA - numB;
+            });
+
+            sortedSessionNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                selector.appendChild(option);
+            });
+
+            // Seleciona a sessão atualmente carregada ou "Nova Sessão"
+            selector.value = currentSessionName;
+            if (selector.value !== currentSessionName) {
+                selector.value = 'Nova Sessão'; // Se a sessão atual não existe mais, seleciona nova sessão
+                currentSessionName = 'Nova Sessão';
+            }
+        }
+
+        // Gera o próximo nome sequencial para uma nova sessão
+        function getNextSessionName() {
+            let nextNumber = 1;
+            const existingNumbers = Object.keys(sessions)
+                .filter(name => name.startsWith('Sessão '))
+                .map(name => parseInt(name.replace('Sessão ', '')))
+                .filter(num => !isNaN(num))
+                .sort((a, b) => a - b);
+
+            for (let i = 0; i < existingNumbers.length; i++) {
+                if (existingNumbers[i] === nextNumber) {
+                    nextNumber++;
+                } else {
+                    break;
+                }
+            }
+            return `Sessão ${nextNumber}`;
+        }
+
+        // Grava a sessão atual
+        function saveCurrentSession() {
+            pauseTimer(); // Pausa o timer antes de salvar
+
+            // Se a sessão atual é "Nova Sessão" e não está vazia, gera um novo nome
+            if (currentSessionName === 'Nova Sessão' && participants.length > 0) {
+                currentSessionName = getNextSessionName();
+            } else if (currentSessionName === 'Nova Sessão' && participants.length === 0) {
+                alert('Não há participantes para salvar nesta nova sessão.');
+                return;
+            }
+
+            sessions[currentSessionName] = {
+                participants: participants.map(p => ({ ...p, status: 'ready' })), // Salva todos como 'ready'
+                alertSettings: { ...alertSettings }
+            };
+            saveSessions();
+            alert(`Sessão "${currentSessionName}" salva com sucesso!`);
+            document.getElementById('sessionSelector').value = currentSessionName; // Garante que a sessão salva está selecionada
+        }
+
+        // Carrega a sessão selecionada no dropdown
+        function loadSelectedSession() {
+            const selectedName = document.getElementById('sessionSelector').value;
+            
+            if (selectedName === 'Nova Sessão') {
+                if (confirm('Deseja iniciar uma nova sessão? Os participantes atuais serão perdidos.')) {
+                    clearAllParticipants(false); // Limpa participantes sem confirmação de limpeza geral
+                    currentSessionName = 'Nova Sessão';
+                    alertSettings = { yellow: 60, red: 30, type: 'text' }; // Reseta configs de alerta
+                    updateAlertSettingsDisplay();
+                    updateDisplay();
+                    updateDisplayWindow();
+                    updateControlButtons();
+                } else {
+                    document.getElementById('sessionSelector').value = currentSessionName; // Volta para a sessão anterior
+                }
+                return;
+            }
+
+            if (sessions[selectedName]) {
+                if (confirm(`Deseja carregar a sessão "${selectedName}"? A sessão atual será perdida.`)) {
+                    pauseTimer(); // Pausa qualquer timer em execução
+                    currentSessionName = selectedName;
+                    const loadedSession = sessions[selectedName];
+                    participants = loadedSession.participants.map(p => ({ ...p })); // Clona para não modificar a versão salva
+                    
+                    // Resetar o estado dos participantes ao carregar (todos como "ready", tempo restante para o tempo inicial)
+                    participants.forEach(p => {
+                        p.remainingTime = p.timeSeconds;
+                        p.status = 'ready';
+                    });
+
+                    // Carrega configurações de alerta
+                    alertSettings = { ...loadedSession.alertSettings };
+                    updateAlertSettingsDisplay(); // Atualiza os campos de input de alerta
+
+                    currentParticipantIndex = 0;
+                    if (participants.length > 0) {
+                        currentTime = participants[0].remainingTime;
+                    } else {
+                        currentTime = 0;
+                    }
+
+                    updateParticipantsList();
+                    updateDisplay();
+                    updateDisplayWindow();
+                    updateControlButtons();
+                    alert(`Sessão "${selectedName}" carregada com sucesso!`);
+                } else {
+                    document.getElementById('sessionSelector').value = currentSessionName; // Volta para a sessão anterior
+                }
+            }
+        }
+
+        // Apaga a sessão selecionada no dropdown
+        function deleteSelectedSession() {
+            const selectedName = document.getElementById('sessionSelector').value;
+            
+            if (selectedName === 'Nova Sessão') {
+                alert('Não é possível apagar a sessão "Nova Sessão".');
+                return;
+            }
+
+            if (confirm(`Tem certeza que deseja apagar a sessão "${selectedName}"? Esta ação não pode ser desfeita.`)) {
+                pauseTimer(); // Pausa o timer
+                delete sessions[selectedName];
+                saveSessions();
+                
+                // Se a sessão apagada era a atualmente carregada, volte para "Nova Sessão"
+                if (currentSessionName === selectedName) {
+                    currentSessionName = 'Nova Sessão';
+                    clearAllParticipants(false); // Limpa os participantes da tela atual
+                    alertSettings = { yellow: 60, red: 30, type: 'text' }; // Reseta configs de alerta
+                    updateAlertSettingsDisplay();
+                }
+                updateSessionSelector(); // Atualiza o dropdown
+                updateDisplay();
+                updateDisplayWindow();
+                updateControlButtons();
+                alert(`Sessão "${selectedName}" apagada com sucesso.`);
+            }
+        }
+
+        // Atualiza os campos de input de alerta com as configurações atuais
+        function updateAlertSettingsDisplay() {
+            document.getElementById('yellowAlert').value = alertSettings.yellow;
+            document.getElementById('redAlert').value = alertSettings.red;
+            document.getElementById('alertType').value = alertSettings.type;
+        }
+
+        // --- Funções Existentes (Com Pequenas Modificações) ---
+
+        // Adicionar tempo aos campos
+        function addTime(minutes, seconds) {
+            const minField = document.getElementById('participantMinutes');
+            const secField = document.getElementById('participantSeconds');
+            
+            let currentMin = parseInt(minField.value) || 0;
+            let currentSec = parseInt(secField.value) || 0;
+            
+            currentMin += minutes;
+            currentSec += seconds;
+            
+            if (currentSec >= 60) {
+                currentMin += Math.floor(currentSec / 60);
+                currentSec = currentSec % 60;
+            } else if (currentSec < 0) {
+                currentMin += Math.ceil(currentSec / 60); 
+                currentSec = currentSec % 60 + 60; 
+            }
+            
+            minField.value = Math.max(0, currentMin);
+            secField.value = Math.max(0, currentSec);
+        }
+
+        // Limpar campos de tempo
+        function clearTime() {
+            document.getElementById('participantMinutes').value = '0';
+            document.getElementById('participantSeconds').value = '0';
+        }
+
+        // Adicionar participante (Atualizado para numeração sequencial sem lacunas e cores)
+        function addParticipant() {
+            let name = document.getElementById('participantName').value.trim();
+            const minutes = parseInt(document.getElementById('participantMinutes').value) || 0;
+            const seconds = parseInt(document.getElementById('participantSeconds').value) || 0;
+
+            if (minutes === 0 && seconds === 0 && !name) {
+                alert('Por favor, defina um tempo para o participante, ou insira um nome para auto-gerar o tempo padrão (00:00).');
+                return;
+            }
+            if (minutes < 0 || seconds < 0) {
+                alert('Os minutos e segundos não podem ser negativos.');
+                return;
+            }
+
+            let nextParticipantNumber = 1;
+            const existingNumbers = participants
+                .filter(p => p.name.startsWith('Participante '))
+                .map(p => parseInt(p.name.replace('Participante ', '')))
+                .filter(num => !isNaN(num))
+                .sort((a, b) => a - b);
+
+            for (let i = 0; i < existingNumbers.length; i++) {
+                if (existingNumbers[i] === nextParticipantNumber) {
+                    nextParticipantNumber++;
+                } else {
+                    break;
+                }
+            }
+
+            if (!name) {
+                name = `Participante ${nextParticipantNumber}`;
+            }
+
+            const totalSeconds = (minutes * 60) + seconds;
+            
+            const assignedColor = participantColors[colorIndex % participantColors.length];
+            colorIndex++; 
+
+            const participant = {
+                id: Date.now(),
+                name: name,
+                timeMinutes: minutes,
+                timeSeconds: totalSeconds,
+                remainingTime: totalSeconds,
+                status: 'ready',
+                color: assignedColor 
+            };
+
+            participants.push(participant);
+            updateParticipantsList();
+            
+            document.getElementById('participantName').value = '';
+            document.getElementById('participantMinutes').value = '0';
+            document.getElementById('participantSeconds').value = '0';
+
+            updateControlButtons(); 
+            updateDisplayWindow(); 
+        }
+
+        // Atualizar lista de participantes (com botão "Iniciar" e ícone de remover)
+        function updateParticipantsList() {
+            const list = document.getElementById('participantsList');
+            
+            if (participants.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>';
+                return;
+            }
+
+            list.innerHTML = participants.map((participant, index) => {
+                const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
+                const displaySeconds = Math.abs(participant.remainingTime) % 60;
+                const sign = participant.remainingTime < 0 ? '-' : '';
+
+                return `
+                    <div class="participant-item">
+                        <div class="participant-info">
+                            <span class="status-indicator ${participant.status === 'ready' ? 'status-ready' : participant.status === 'active' ? 'status-active' : 'status-finished'}"></span>
+                            <span class="participant-color-indicator" style="background-color: ${participant.color};"></span>
+                            <span class="participant-name">${participant.name}</span>
+                        </div>
+                        <div class="participant-time">${sign}${String(displayMinutes).padStart(2, '0')}:${String(displaySeconds).padStart(2, '0')}</div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn btn-success btn-delete-small" onclick="selectParticipant(${index})" title="Selecionar para Apresentar">▶️</button>
+                            <button class="btn btn-danger btn-delete-small" onclick="removeParticipant(${participant.id})" title="Remover Participante">✖️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Remover participante
+        function removeParticipant(id) {
+            if (confirm('Tem certeza que deseja remover este participante?')) {
+                const initialLength = participants.length;
+                participants = participants.filter(p => p.id !== id);
+                
+                if (participants.length < initialLength) { // Se um participante foi realmente removido
+                    // Ajusta o currentParticipantIndex se o removido for anterior ao atual
+                    if (currentParticipantIndex >= participants.length && participants.length > 0) {
+                        currentParticipantIndex = participants.length - 1;
+                    } else if (participants.length === 0) {
+                        currentParticipantIndex = 0;
+                        pauseTimer();
+                    }
+                    updateParticipantsList();
+                    updateDisplay();
+                    updateDisplayWindow();
+                    updateControlButtons();
+                }
+            }
+        }
+
+        // Limpar todos os participantes
+        function clearAllParticipants(showConfirm = true) {
+            if (showConfirm && !confirm('Tem certeza que deseja limpar todos os participantes? Esta ação não pode ser desfeita.')) {
+                return;
+            }
+            pauseTimer();
+            participants = [];
+            currentParticipantIndex = 0;
+            currentTime = 0;
+            colorIndex = 0; // Resetar o índice de cores
+            updateParticipantsList();
+            updateDisplay();
+            updateDisplayWindow();
+            updateControlButtons();
+        }
+
+        // Selecionar participante
+        function selectParticipant(index) {
+            if (index >= 0 && index < participants.length) {
+                pauseTimer();
+                if (participants[currentParticipantIndex] && participants[currentParticipantIndex].status === 'active') {
+                    participants[currentParticipantIndex].status = 'finished'; // Marca o anterior como terminado se estava ativo
+                }
+                currentParticipantIndex = index;
+                const selectedP = participants[currentParticipantIndex];
+                selectedP.status = 'active';
+                currentTime = selectedP.remainingTime; // Reseta para o remainingTime do participante
+                updateParticipantsList();
+                updateDisplay();
+                updateDisplayWindow();
+                updateControlButtons();
+                startTimer(); // Inicia o timer automaticamente
+            }
+        }
+
+        // Iniciar o timer
+        function startTimer() {
+            if (isRunning) return;
+            if (participants.length === 0) {
+                alert('Por favor, adicione participantes antes de iniciar o timer.');
+                return;
+            }
+            if (participants[currentParticipantIndex].status === 'finished') {
+                if (!confirm('Este participante já terminou. Deseja reiniciar o tempo para ele?')) {
+                    return;
+                } else {
+                    participants[currentParticipantIndex].remainingTime = participants[currentParticipantIndex].timeSeconds;
+                    currentTime = participants[currentParticipantIndex].remainingTime;
+                }
+            }
+
+            isRunning = true;
+            isPaused = false;
+            participants[currentParticipantIndex].status = 'active';
+            updateParticipantsList(); // Atualiza o status visual
+            updateControlButtons();
+
+            timerInterval = setInterval(() => {
+                currentTime--;
+                participants[currentParticipantIndex].remainingTime = currentTime; // Salva o tempo restante no objeto
+                updateDisplay();
+                updateDisplayWindow();
+
+                if (currentTime <= alertSettings.yellow && currentTime > alertSettings.red) {
+                    // Amarelo
+                    document.getElementById('currentTime').classList.remove('time-green', 'time-red', 'time-negative');
+                    document.getElementById('currentTime').classList.add('time-yellow');
+                    if (displayWindow) {
+                        displayWindow.document.body.className = '';
+                        if (alertSettings.type === 'background' || alertSettings.type === 'both') {
+                            displayWindow.document.body.classList.add('background-yellow');
+                        }
+                        if (alertSettings.type === 'text' || alertSettings.type === 'both') {
+                            displayWindow.document.getElementById('displayTime').classList.remove('time-green', 'time-red', 'time-negative');
+                            displayWindow.document.getElementById('displayTime').classList.add('time-yellow');
+                        }
+                    }
+                } else if (currentTime <= alertSettings.red && currentTime >= 0) {
+                    // Vermelho
+                    document.getElementById('currentTime').classList.remove('time-green', 'time-yellow', 'time-negative');
+                    document.getElementById('currentTime').classList.add('time-red');
+                    if (displayWindow) {
+                        displayWindow.document.body.className = '';
+                        if (alertSettings.type === 'background' || alertSettings.type === 'both') {
+                            displayWindow.document.body.classList.add('background-red');
+                        }
+                        if (alertSettings.type === 'text' || alertSettings.type === 'both') {
+                            displayWindow.document.getElementById('displayTime').classList.remove('time-green', 'time-yellow', 'time-negative');
+                            displayWindow.document.getElementById('displayTime').classList.add('time-red');
+                        }
+                    }
+                } else if (currentTime < 0) {
+                    // Tempo Negativo - Vermelho
+                    document.getElementById('currentTime').classList.remove('time-green', 'time-yellow', 'time-red');
+                    document.getElementById('currentTime').classList.add('time-negative');
+                    if (displayWindow) {
+                        displayWindow.document.body.className = '';
+                        if (alertSettings.type === 'background' || alertSettings.type === 'both') {
+                            displayWindow.document.body.classList.add('background-red'); // Mantém o fundo vermelho para tempo negativo
+                        }
+                        if (alertSettings.type === 'text' || alertSettings.type === 'both') {
+                            displayWindow.document.getElementById('displayTime').classList.remove('time-green', 'time-yellow', 'time-red');
+                            displayWindow.document.getElementById('displayTime').classList.add('time-negative');
+                        }
+                    }
+                } else {
+                    // Verde
+                    document.getElementById('currentTime').classList.remove('time-yellow', 'time-red', 'time-negative');
+                    document.getElementById('currentTime').classList.add('time-green');
+                    if (displayWindow) {
+                        displayWindow.document.body.className = '';
+                        displayWindow.document.getElementById('displayTime').classList.remove('time-yellow', 'time-red', 'time-negative');
+                        displayWindow.document.getElementById('displayTime').classList.add('time-green');
+                    }
+                }
+            }, 1000);
+        }
+
+        // Pausar o timer
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            isPaused = true;
+            participants[currentParticipantIndex].status = 'ready'; // Marca como pronto ao pausar
+            updateParticipantsList();
+            updateControlButtons();
+            updateDisplayWindow();
+        }
+
+        // Resetar o timer
+        function resetTimer() {
+            pauseTimer();
+            if (participants.length > 0) {
+                participants[currentParticipantIndex].remainingTime = participants[currentParticipantIndex].timeSeconds;
+                participants[currentParticipantIndex].status = 'ready';
+                currentTime = participants[currentParticipantIndex].remainingTime;
+            } else {
+                currentTime = 0;
+            }
+            updateParticipantsList();
+            updateDisplay();
+            updateDisplayWindow();
+            updateControlButtons();
+        }
+
+        // Próximo participante
+        function nextParticipant() {
+            pauseTimer();
+            if (participants.length === 0) return;
+
+            if (participants[currentParticipantIndex] && participants[currentParticipantIndex].status === 'active') {
+                participants[currentParticipantIndex].status = 'finished'; // Marca o anterior como terminado
+            }
+
+            currentParticipantIndex = (currentParticipantIndex + 1) % participants.length;
+            participants[currentParticipantIndex].status = 'active'; // Marca o próximo como ativo
+            currentTime = participants[currentParticipantIndex].remainingTime;
+            updateParticipantsList();
+            updateDisplay();
+            updateDisplayWindow();
+            startTimer(); // Inicia o timer automaticamente para o próximo
+        }
+
+        // Participante anterior
+        function previousParticipant() {
+            pauseTimer();
+            if (participants.length === 0) return;
+
+            if (participants[currentParticipantIndex] && participants[currentParticipantIndex].status === 'active') {
+                participants[currentParticipantIndex].status = 'ready'; // Volta o anterior para pronto
+            }
+
+            currentParticipantIndex = (currentParticipantIndex - 1 + participants.length) % participants.length;
+            participants[currentParticipantIndex].status = 'active'; // Marca o novo como ativo
+            currentTime = participants[currentParticipantIndex].remainingTime;
+            updateParticipantsList();
+            updateDisplay();
+            updateDisplayWindow();
+            startTimer(); // Inicia o timer automaticamente para o anterior
+        }
+
+        // Ajustar tempo
+        function adjustTime(seconds) {
+            if (participants.length === 0) return;
+            currentTime += seconds;
+            participants[currentParticipantIndex].remainingTime = currentTime;
+            updateDisplay();
+            updateDisplayWindow();
+        }
+
+        // Atualizar o display principal
+        function updateDisplay() {
+            const speakerElement = document.getElementById('currentSpeaker');
+            const timeElement = document.getElementById('currentTime');
+            const statusElement = document.getElementById('sessionStatus');
+
+            if (participants.length > 0) {
+                const currentP = participants[currentParticipantIndex];
+                speakerElement.textContent = currentP.name;
+                const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
+                const displaySeconds = Math.abs(currentTime) % 60;
+                const sign = currentTime < 0 ? '-' : '';
+                timeElement.textContent = `${sign}${String(displayMinutes).padStart(2, '0')}:${String(displaySeconds).padStart(2, '0')}`;
+                
+                // Atualiza a cor do tempo no display principal
+                timeElement.classList.remove('time-green', 'time-yellow', 'time-red', 'time-negative');
+                if (currentTime <= alertSettings.yellow && currentTime > alertSettings.red) {
+                    timeElement.classList.add('time-yellow');
+                } else if (currentTime <= alertSettings.red && currentTime >= 0) {
+                    timeElement.classList.add('time-red');
+                } else if (currentTime < 0) {
+                    timeElement.classList.add('time-negative');
+                } else {
+                    timeElement.classList.add('time-green');
+                }
+
+                statusElement.textContent = `Status: ${currentP.status === 'active' ? 'Ativo' : currentP.status === 'ready' ? 'Pronto' : 'Terminado'}`;
+            } else {
+                speakerElement.textContent = 'Selecione um participante';
+                timeElement.textContent = '00:00';
+                timeElement.classList.remove('time-green', 'time-yellow', 'time-red', 'time-negative'); // Remove cores
+                statusElement.textContent = 'Sessão não iniciada';
+            }
+        }
+
+        // Atualizar botões de controlo
+        function updateControlButtons() {
+            const hasParticipants = participants.length > 0;
+            const isFirst = currentParticipantIndex === 0;
+            const isLast = currentParticipantIndex === participants.length - 1;
+
+            document.getElementById('startBtn').disabled = !hasParticipants || isRunning;
+            document.getElementById('pauseBtn').disabled = !hasParticipants || !isRunning;
+            document.getElementById('resetBtn').disabled = !hasParticipants;
+            document.getElementById('previousBtn').disabled = !hasParticipants || (currentMode === 'individual' && isRunning); // Desabilita em individual enquanto roda
+            document.getElementById('nextBtn').disabled = !hasParticipants || (currentMode === 'individual' && isRunning); // Desabilita em individual enquanto roda
+            document.getElementById('adjustMinus30Btn').disabled = !hasParticipants;
+            document.getElementById('adjustMinus10Btn').disabled = !hasParticipants;
+            document.getElementById('adjustPlus10Btn').disabled = !hasParticipants;
+            document.getElementById('adjustPlus30Btn').disabled = !hasParticipants;
+        }
+
+        // Mudar o modo (Individual/Debate)
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active'); // Assume que o evento vem do clique no botão
+            updateDisplayWindow(); // Atualiza a janela de exibição com o novo modo
+            updateControlButtons(); // Atualiza o estado dos botões conforme o modo
+        }
+
+        // Abrir a janela de exibição
+        function openDisplayWindow() {
+            if (displayWindow && !displayWindow.closed) {
+                displayWindow.focus();
+                return;
+            }
+
+            displayWindow = window.open('', '_blank', 'width=800,height=600,resizable=yes');
+            if (!displayWindow) {
+                alert('Pop-ups bloqueados! Por favor, permita pop-ups para esta página para abrir a janela de exibição.');
+                return;
+            }
+
+            displayWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="pt">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Ecrã de Apresentação</title>
+                    <style>
+                        body {
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            background: #000;
+                            color: #fff;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            margin: 0;
+                            overflow: hidden; /* Prevent scrollbars */
+                            transition: background-color 0.5s ease-in-out;
+                        }
+                        .display-container {
+                            text-align: center;
+                            transform: scale(1.0); /* Adjust as needed */
+                            transition: transform 0.3s ease-out;
+                        }
+                        #displaySpeaker {
+                            font-size: 5rem; /* Larger font size */
+                            font-weight: 700;
+                            margin-bottom: 20px;
+                            color: #ffffff;
+                            transition: color 0.5s ease;
+                            text-shadow: 0 0 20px rgba(255,255,255,0.2);
+                        }
+                        #displayTime {
+                            font-size: 15rem; /* Massive font size */
+                            font-weight: 900;
+                            font-family: 'Courier New', monospace;
+                            color: #48bb78; /* Default green */
+                            text-shadow: 0 0 30px rgba(72,187,120,0.5);
+                            transition: color 0.5s ease, text-shadow 0.5s ease;
+                        }
+
+                        .time-green { color: #48bb78; text-shadow: 0 0 30px rgba(72,187,120,0.5); }
+                        .time-yellow { color: #ed8936; text-shadow: 0 0 30px rgba(237,137,54,0.5); }
+                        .time-red { color: #f56565; text-shadow: 0 0 30px rgba(245,101,101,0.5); }
+                        .time-negative { color: #f56565; text-shadow: 0 0 30px rgba(245,101,101,0.5); }
+
+                        .background-yellow { background-color: #ed8936; }
+                        .background-red { background-color: #f56565; }
+
+                        /* Debate Mode Specific Styles */
+                        .debate-container {
+                            display: flex;
+                            flex-wrap: wrap;
+                            justify-content: center;
+                            align-items: flex-start; /* Aligns items to the start of the cross axis */
+                            gap: 30px;
+                            padding: 20px;
+                            max-height: 100vh;
+                            overflow-y: auto; /* Enable scrolling for many participants */
+                            width: 100%;
+                        }
+
+                        .debate-participant {
+                            background: #1a1a1a;
+                            border: 2px solid #333;
+                            border-radius: 15px;
+                            padding: 20px;
+                            text-align: center;
+                            width: 280px; /* Fixed width for better layout control */
+                            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                            transition: all 0.3s ease;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: space-between;
+                        }
+
+                        .debate-participant.active-speaker {
+                            border-color: #667eea;
+                            transform: scale(1.05);
+                            box-shadow: 0 10px 20px rgba(102,126,234,0.3);
+                        }
+
+                        .debate-name {
+                            font-size: 1.8rem;
+                            font-weight: 600;
+                            margin-bottom: 10px;
+                            color: #ffffff;
+                            word-break: break-word; /* Prevents long names from overflowing */
+                        }
+
+                        .debate-time {
+                            font-size: 4rem;
+                            font-weight: 700;
+                            font-family: 'Courier New', monospace;
+                            color: #48bb78; /* Default green */
+                        }
+
+                        .debate-participant-color-indicator {
+                            width: 40px;
+                            height: 8px;
+                            border-radius: 4px;
+                            margin: 10px auto 0 auto;
+                        }
+                        
+                        #displayMessage {
+                            font-size: 3rem;
+                            font-weight: bold;
+                            color: #667eea;
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            background: rgba(0,0,0,0.8);
+                            padding: 20px 40px;
+                            border-radius: 10px;
+                            border: 2px solid #667eea;
+                            z-index: 1000;
+                            display: none; /* Hidden by default */
+                        }
+
+                        /* Media Queries for Responsiveness */
+                        @media (max-width: 768px) {
+                            #displaySpeaker { font-size: 3rem; margin-bottom: 15px; }
+                            #displayTime { font-size: 8rem; }
+                            .debate-name { font-size: 1.2rem; }
+                            .debate-time { font-size: 3rem; }
+                            .debate-participant { width: 180px; padding: 15px; }
+                            #displayMessage { font-size: 2rem; padding: 15px 30px; }
+                        }
+                        @media (max-width: 480px) {
+                            #displaySpeaker { font-size: 2rem; margin-bottom: 10px; }
+                            #displayTime { font-size: 6rem; }
+                            .debate-name { font-size: 1rem; }
+                            .debate-time { font-size: 2rem; }
+                            .debate-participant { width: 140px; padding: 10px; }
+                            #displayMessage { font-size: 1.5rem; padding: 10px 20px; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div id="individualModeDisplay" class="display-container">
+                        <div id="displaySpeaker"></div>
+                        <div id="displayTime"></div>
+                    </div>
+                    <div id="debateModeDisplay" class="debate-container" style="display: none;"></div>
+                    <div id="displayMessage" style="display: none;"></div>
+                </body>
+                </html>
+            `);
+            displayWindow.document.close();
+            updateDisplayWindow(); // Sincroniza o conteúdo inicial
+            
+            // Limpar a mensagem no fechamento da janela de exibição
+            displayWindow.onbeforeunload = () => {
+                currentMessage = "";
+            };
+        }
+
+        // Atualizar a janela de exibição
+        function updateDisplayWindow() {
+            if (displayWindow && !displayWindow.closed) {
+                const dDoc = displayWindow.document;
+                const individualDisplay = dDoc.getElementById('individualModeDisplay');
+                const debateDisplay = dDoc.getElementById('debateModeDisplay');
+                const displayMsgElement = dDoc.getElementById('displayMessage');
+
+                if (currentMessage) {
+                    displayMsgElement.textContent = currentMessage;
+                    displayMsgElement.style.display = 'block';
+                    individualDisplay.style.display = 'none';
+                    debateDisplay.style.display = 'none';
+                    dDoc.body.className = ''; // Limpa as classes de fundo
+                    return; // Não atualiza mais nada se houver mensagem
+                } else {
+                    displayMsgElement.style.display = 'none';
+                }
+
+                if (currentMode === 'individual') {
+                    individualDisplay.style.display = 'flex';
+                    debateDisplay.style.display = 'none';
+
+                    const dSpeaker = dDoc.getElementById('displaySpeaker');
+                    const dTime = dDoc.getElementById('displayTime');
+                    
+                    if (participants.length > 0) {
+                        const currentP = participants[currentParticipantIndex];
+                        dSpeaker.textContent = currentP.name;
+                        const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
+                        const displaySeconds = Math.abs(currentTime) % 60;
+                        const sign = currentTime < 0 ? '-' : '';
+                        dTime.textContent = `${sign}${String(displayMinutes).padStart(2, '0')}:${String(displaySeconds).padStart(2, '0')}`;
+
+                        // Remove todas as classes de cor e fundo antes de adicionar as corretas
+                        dTime.classList.remove('time-green', 'time-yellow', 'time-red', 'time-negative');
+                        dDoc.body.className = '';
+
+                        if (currentTime <= alertSettings.yellow && currentTime > alertSettings.red) {
+                            if (alertSettings.type === 'background' || alertSettings.type === 'both') dDoc.body.classList.add('background-yellow');
+                            if (alertSettings.type === 'text' || alertSettings.type === 'both') dTime.classList.add('time-yellow');
+                        } else if (currentTime <= alertSettings.red && currentTime >= 0) {
+                            if (alertSettings.type === 'background' || alertSettings.type === 'both') dDoc.body.classList.add('background-red');
+                            if (alertSettings.type === 'text' || alertSettings.type === 'both') dTime.classList.add('time-red');
+                        } else if (currentTime < 0) {
+                            if (alertSettings.type === 'background' || alertSettings.type === 'both') dDoc.body.classList.add('background-red');
+                            if (alertSettings.type === 'text' || alertSettings.type === 'both') dTime.classList.add('time-negative');
+                        } else {
+                            dTime.classList.add('time-green');
+                        }
+                    } else {
+                        dSpeaker.textContent = 'Aguardando Participante';
+                        dTime.textContent = '00:00';
+                        dTime.classList.remove('time-yellow', 'time-red', 'time-negative');
+                        dTime.classList.add('time-green');
+                        dDoc.body.className = '';
+                    }
+                } else { // Debate Mode
+                    individualDisplay.style.display = 'none';
+                    debateDisplay.style.display = 'flex';
+                    dDoc.body.className = ''; // Limpa classes de fundo do body principal
+
+                    debateDisplay.innerHTML = participants.map((p, index) => {
+                        const pDisplayMinutes = Math.floor(Math.abs(p.remainingTime) / 60);
+                        const pDisplaySeconds = Math.abs(p.remainingTime) % 60;
+                        const pSign = p.remainingTime < 0 ? '-' : '';
+                        let timeClass = 'time-green';
+                        if (p.remainingTime <= alertSettings.yellow && p.remainingTime > alertSettings.red) {
+                            timeClass = 'time-yellow';
+                        } else if (p.remainingTime <= alertSettings.red && p.remainingTime >= 0) {
+                            timeClass = 'time-red';
+                        } else if (p.remainingTime < 0) {
+                            timeClass = 'time-negative';
+                        }
+
+                        const activeClass = (index === currentParticipantIndex && isRunning && currentMode === 'debate') ? 'active-speaker' : '';
+                        return `
+                            <div class="debate-participant ${activeClass}" style="border-color: ${p.color};">
+                                <div class="debate-name">${p.name}</div>
+                                <div class="debate-time ${timeClass}">${pSign}${String(pDisplayMinutes).padStart(2, '0')}:${String(pDisplaySeconds).padStart(2, '0')}</div>
+                                <div class="debate-participant-color-indicator" style="background-color: ${p.color};"></div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
+        // Enviar mensagem para o display ao pressionar Enter
+        document.getElementById('displayMessageInput').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                currentMessage = this.value;
+                updateDisplayWindow();
+                this.value = ''; // Limpa o input após enviar
+            }
+        });
+
+        // Lógica para as configurações de alerta
+        document.getElementById('yellowAlert').addEventListener('change', (e) => {
+            alertSettings.yellow = parseInt(e.target.value);
+            updateDisplay(); // Atualiza a cor do display principal se estiver dentro dos limites
+            updateDisplayWindow(); // Atualiza a janela de exibição
+        });
+        document.getElementById('redAlert').addEventListener('change', (e) => {
+            alertSettings.red = parseInt(e.target.value);
+            updateDisplay(); // Atualiza a cor do display principal se estiver dentro dos limites
+            updateDisplayWindow(); // Atualiza a janela de exibição
+        });
+        document.getElementById('alertType').addEventListener('change', (e) => {
+            alertSettings.type = e.target.value;
+            updateDisplayWindow(); // Atualiza a janela de exibição para aplicar o novo tipo de alerta
+        });
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSessions();
+            updateParticipantsList();
+            updateDisplay();
+            updateControlButtons();
+            updateAlertSettingsDisplay(); // Garante que os inputs de alerta são preenchidos na inicialização
+        });
+    </script>
 </body>
 </html>
