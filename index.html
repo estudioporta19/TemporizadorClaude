@@ -227,7 +227,15 @@
         .participant-info {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px; /* Reduced gap */
+        }
+
+        .participant-color-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+            flex-shrink: 0; /* Prevents shrinking */
         }
 
         .participant-name {
@@ -540,6 +548,23 @@
         let displayWindow = null;
         let currentMessage = ""; // Para armazenar a mensagem para o display
 
+        // Paleta de cores para participantes - cores vibrantes e distintas
+        const participantColors = [
+            '#667eea', // Amethyst (Azul/Roxo)
+            '#48bb78', // Emerald (Verde)
+            '#ed8936', // Orange (Laranja)
+            '#f56565', // Red (Vermelho)
+            '#4299e1', // Blue (Azul)
+            '#ecc94b', // Yellow (Amarelo)
+            '#9f7aea', // Purple (Roxo)
+            '#a0aec0', // Gray (Cinza)
+            '#e53e3e', // Rose (Vermelho Escuro)
+            '#38b2ac', // Teal (Verde Azulado)
+            '#d69e2e', // Gold (Dourado)
+            '#b794f4'  // Lavender (Lilás)
+        ];
+        let colorIndex = 0; // Para ciclar as cores
+
         // Configurações de alerta
         let alertSettings = {
             yellow: 60,
@@ -577,7 +602,7 @@
             document.getElementById('participantSeconds').value = '0';
         }
 
-        // Adicionar participante (Atualizado para numeração sequencial sem lacunas)
+        // Adicionar participante (Atualizado para numeração sequencial sem lacunas e cores)
         function addParticipant() {
             let name = document.getElementById('participantName').value.trim();
             const minutes = parseInt(document.getElementById('participantMinutes').value) || 0;
@@ -615,6 +640,10 @@
             }
 
             const totalSeconds = (minutes * 60) + seconds;
+            
+            // Atribui uma cor da paleta
+            const assignedColor = participantColors[colorIndex % participantColors.length];
+            colorIndex++; // Avança para a próxima cor
 
             const participant = {
                 id: Date.now(),
@@ -622,7 +651,8 @@
                 timeMinutes: minutes,
                 timeSeconds: totalSeconds,
                 remainingTime: totalSeconds,
-                status: 'ready'
+                status: 'ready',
+                color: assignedColor // Adiciona a cor ao objeto participante
             };
 
             participants.push(participant);
@@ -654,6 +684,7 @@
                     <div class="participant-item">
                         <div class="participant-info">
                             <span class="status-indicator status-${participant.status}"></span>
+                            <div class="participant-color-indicator" style="background-color: ${participant.color};"></div>
                             <span class="participant-name">${participant.name}</span>
                             <span class="participant-time">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</span>
                         </div>
@@ -692,13 +723,14 @@
             updateControlButtons(); // Atualiza botões de controle ao remover participante
         }
 
-        // **NOVO** Limpar todos os participantes
+        // Limpar todos os participantes
         function clearAllParticipants() {
             if (confirm('Tem certeza que deseja remover TODOS os participantes? Esta ação não pode ser desfeita.')) {
                 pauseTimer(); // Pausa qualquer timer em execução
                 participants = [];
                 currentParticipantIndex = 0;
                 currentTime = 0;
+                colorIndex = 0; // Resetar o índice de cores também
                 updateParticipantsList();
                 updateDisplay();
                 updateDisplayWindow();
@@ -712,8 +744,8 @@
                 // Se já estiver rodando e for o mesmo participante, pause
                 pauseTimer();
             } else {
-                // Se não estiver rodando ou for outro participante, selecione e inicie
-                if (isRunning) { // Se um timer já estiver rodando, pause-o antes de mudar
+                // Se não estiver rodando ou for outro participante, pause o atual e selecione e inicie o novo
+                if (isRunning) { 
                     pauseTimer();
                 }
                 selectParticipant(index, true); // Seleciona e inicia
@@ -963,7 +995,7 @@
             document.getElementById('adjustPlus30Btn').disabled = !isCurrentlySelected;
         }
 
-        // **NOVO** Enviar mensagem para o display externo
+        // Enviar mensagem para o display externo
         function sendMessageToDisplay(message) {
             currentMessage = message;
             updateDisplayWindow(); // Atualiza a janela do display para mostrar a mensagem
@@ -1037,34 +1069,47 @@
                             opacity: 0.8;
                             margin-top: 20px;
                         }
+                        /* Debate Grid Styles - Adjusted for dynamic sizing */
                         .debate-grid {
                             display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Min size for boxes */
                             gap: 20px;
                             width: 100%;
                             max-width: 1200px;
+                            align-items: start; /* Align items to the start of their grid area */
+                            justify-content: center;
                         }
                         .debate-participant {
                             background: rgba(255,255,255,0.1);
                             border-radius: 15px;
                             padding: 20px;
                             text-align: center;
-                            border: 3px solid transparent;
-                            transition: border-color 0.3s, background-color 0.3s;
+                            border: 3px solid transparent; /* Default transparent border */
+                            transition: border-color 0.3s, background-color 0.3s, transform 0.2s;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: space-between;
+                            min-height: 150px; /* Minimum height for better appearance */
                         }
                         .debate-participant.active {
-                            border-color: #ed8936;
-                            background: rgba(237,137,54,0.2);
+                            border-width: 5px; /* Thicker border for active participant */
+                            background: rgba(237,137,54,0.2); /* Example active background, can be adjusted */
+                            transform: scale(1.02); /* Slightly enlarge active participant */
                         }
                         .debate-name {
-                            font-size: 1.5rem;
+                            font-size: 1.6rem; /* Slightly larger font */
                             font-weight: 600;
                             margin-bottom: 10px;
+                            word-break: break-word; /* Ensure long names break correctly */
                         }
                         .debate-time {
-                            font-size: 2.5rem;
+                            font-size: 2.8rem; /* Slightly larger font */
                             font-weight: 700;
                             font-family: 'Courier New', monospace;
+                            flex-grow: 1; /* Allows time to take up available space */
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
                         }
                         /* Estilos para a área de mensagem */
                         .message-area {
@@ -1151,6 +1196,12 @@
                 }
 
             } else if (currentMode === 'debate') {
+                // Esconde os elementos do modo individual no modo debate
+                if (container.querySelector('#displaySpeaker')) container.querySelector('#displaySpeaker').style.display = 'none';
+                if (container.querySelector('#displayTime')) container.querySelector('#displayTime').style.display = 'none';
+                if (container.querySelector('#displayStatus')) container.querySelector('#displayStatus').style.display = 'none';
+
+
                 const debateParticipantsHtml = participants.map((participant, index) => {
                     const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
                     const displaySeconds = Math.abs(participant.remainingTime) % 60;
@@ -1172,7 +1223,7 @@
 
                     const isActive = index === currentParticipantIndex && isRunning;
                     return `
-                        <div class="debate-participant ${isActive ? 'active' : ''}">
+                        <div class="debate-participant ${isActive ? 'active' : ''}" style="border-color: ${participant.color};">
                             <div class="debate-name">${participant.name}</div>
                             <div class="debate-time ${timeClass}">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</div>
                         </div>
@@ -1184,6 +1235,7 @@
                         ${debateParticipantsHtml}
                     </div>
                 `;
+                // Atualiza o conteúdo do container
                 container.innerHTML = contentHtml;
                 displayWindow.document.body.style.backgroundColor = '#1a202c'; // Fundo escuro padrão para o modo debate
             }
@@ -1200,7 +1252,7 @@
             updateDisplay();
             updateControlButtons(); // Garante que os botões estão no estado correto ao carregar
 
-            // **NOVO** Adiciona o event listener para a caixa de mensagem
+            // Adiciona o event listener para a caixa de mensagem
             const messageInput = document.getElementById('displayMessageInput');
             if (messageInput) {
                 messageInput.addEventListener('keypress', function(event) {
