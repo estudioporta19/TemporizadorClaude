@@ -492,7 +492,28 @@
                     </select>
                 </div>
             </div>
+        <div class="column">
+                <h2 class="column-title">🎮 Modo de Operação</h2>
+                
+                <div class="mode-selector">
+                    <div class="mode-btn active" onclick="setMode('individual')">
+                        <strong>Individual</strong><br>
+                        <small>Um orador</small>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('debate')">
+                        <strong>Debate</strong><br>
+                        <small>Todos visíveis</small>
+                    </div>
+                </div>
 
+                <h3 style="color: #ffffff; margin: 20px 0 15px 0; font-size: 1.1rem;">👥 Participantes</h3>
+                
+                <div class="participants-list" id="participantsList">
+                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
+                </div>
+
+                <button class="btn btn-danger" onclick="clearAllParticipants()" style="width: 100%; margin-top: 20px;">Limpar Lista de Participantes</button>
+            </div>
             <div class="column">
                 <h2 class="column-title">🎛️ Controlo da Sessão</h2>
                 
@@ -527,28 +548,7 @@
                 </div>
             </div>
 
-            <div class="column">
-                <h2 class="column-title">🎮 Modo de Operação</h2>
-                
-                <div class="mode-selector">
-                    <div class="mode-btn active" onclick="setMode('individual')">
-                        <strong>Individual</strong><br>
-                        <small>Um orador</small>
-                    </div>
-                    <div class="mode-btn" onclick="setMode('debate')">
-                        <strong>Debate</strong><br>
-                        <small>Todos visíveis</small>
-                    </div>
-                </div>
-
-                <h3 style="color: #ffffff; margin: 20px 0 15px 0; font-size: 1.1rem;">👥 Participantes</h3>
-                
-                <div class="participants-list" id="participantsList">
-                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
-                </div>
-
-                <button class="btn btn-danger" onclick="clearAllParticipants()" style="width: 100%; margin-top: 20px;">Limpar Lista de Participantes</button>
-            </div>
+            
         </div>
     </div>
 
