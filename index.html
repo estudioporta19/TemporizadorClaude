@@ -26,8 +26,7 @@
 
         .main-layout {
             display: grid;
-            /* Nova ordem das colunas: Configuração (1), Modo/Participantes (2), Controlo (3) */
-            grid-template-columns: 1fr 1fr 1fr; 
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 20px;
             margin-top: 20px;
         }
@@ -495,29 +494,6 @@
             </div>
 
             <div class="column">
-                <h2 class="column-title">🎮 Modo de Operação</h2>
-                
-                <div class="mode-selector">
-                    <div class="mode-btn active" onclick="setMode('individual')">
-                        <strong>Individual</strong><br>
-                        <small>Um orador</small>
-                    </div>
-                    <div class="mode-btn" onclick="setMode('debate')">
-                        <strong>Debate</strong><br>
-                        <small>Todos visíveis</small>
-                    </div>
-                </div>
-
-                <h3 style="color: #ffffff; margin: 20px 0 15px 0; font-size: 1.1rem;">👥 Participantes</h3>
-                
-                <div class="participants-list" id="participantsList">
-                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
-                </div>
-
-                <button class="btn btn-danger" onclick="clearAllParticipants()" style="width: 100%; margin-top: 20px;">Limpar Lista de Participantes</button>
-            </div>
-
-            <div class="column">
                 <h2 class="column-title">🎛️ Controlo da Sessão</h2>
                 
                 <div class="current-session" id="sessionDisplay">
@@ -549,6 +525,29 @@
                     <h3 style="color: #ffffff; margin-bottom: 10px; font-size: 1.1rem; text-align: center;">💬 Enviar Mensagem para o Ecrã</h3>
                     <input type="text" id="displayMessageInput" class="message-input" placeholder="Carregue Enter para enviar mensagem">
                 </div>
+            </div>
+
+            <div class="column">
+                <h2 class="column-title">🎮 Modo de Operação</h2>
+                
+                <div class="mode-selector">
+                    <div class="mode-btn active" onclick="setMode('individual')">
+                        <strong>Individual</strong><br>
+                        <small>Um orador</small>
+                    </div>
+                    <div class="mode-btn" onclick="setMode('debate')">
+                        <strong>Debate</strong><br>
+                        <small>Todos visíveis</small>
+                    </div>
+                </div>
+
+                <h3 style="color: #ffffff; margin: 20px 0 15px 0; font-size: 1.1rem;">👥 Participantes</h3>
+                
+                <div class="participants-list" id="participantsList">
+                    <p style="text-align: center; color: #718096;">Nenhum participante adicionado</p>
+                </div>
+
+                <button class="btn btn-danger" onclick="clearAllParticipants()" style="width: 100%; margin-top: 20px;">Limpar Lista de Participantes</button>
             </div>
         </div>
     </div>
@@ -668,46 +667,26 @@
             return `Sessão ${nextNumber}`;
         }
 
-        // Grava a sessão atual (MODIFICADA)
+        // Grava a sessão atual
         function saveCurrentSession() {
             pauseTimer(); // Pausa o timer antes de salvar
 
-            if (participants.length === 0) {
-                 alert('Não há participantes para salvar nesta sessão.');
+            // Se a sessão atual é "Nova Sessão" e não está vazia, gera um novo nome
+            if (currentSessionName === 'Nova Sessão' && participants.length > 0) {
+                currentSessionName = getNextSessionName();
+            } else if (currentSessionName === 'Nova Sessão' && participants.length === 0) {
+                 alert('Não há participantes para salvar nesta nova sessão.');
                  return;
             }
 
-            let nameToSave = currentSessionName;
-
-            // Se a sessão atual é "Nova Sessão" OU se o nome atual não está no dropdown (indicando uma edição não salva de uma sessão carregada ou uma nova sessão já iniciada),
-            // OU se a lista de participantes foi limpa e novos adicionados (o que implica uma nova sessão)
-            // sempre tenta gerar um novo nome sequencial, a menos que o nome atual já exista nas sessões salvas
-            const selector = document.getElementById('sessionSelector');
-            const sessionNameExistsInSelector = Array.from(selector.options).some(option => option.value === currentSessionName && option.value !== 'Nova Sessão');
-
-
-            if (currentSessionName === 'Nova Sessão' || !sessionNameExistsInSelector) {
-                nameToSave = getNextSessionName(); // Sempre gera um novo nome sequencial
-            } else {
-                // Se o nome atual já existe no seletor (ou seja, é uma sessão carregada)
-                // e o usuário clicou em salvar, ele está sobrescrevendo intencionalmente.
-                // A confirmação é dada pela UI, ao selecionar a sessão no dropdown.
-                // Não precisa de alert aqui, pois a intenção é sobrescrever,
-                // ou se o nome foi alterado manualmente para um já existente, ele sobrescreverá.
-            }
-
-            sessions[nameToSave] = {
+            sessions[currentSessionName] = {
                 participants: participants.map(p => ({ ...p, status: 'ready' })), // Salva todos como 'ready'
                 alertSettings: { ...alertSettings }
             };
             saveSessions();
-            
-            // Define a sessão atualmente carregada para a sessão que acabou de ser salva
-            currentSessionName = nameToSave;
-            document.getElementById('sessionSelector').value = currentSessionName; // Garante que a sessão salva está selecionada
             alert(`Sessão "${currentSessionName}" salva com sucesso!`);
+            document.getElementById('sessionSelector').value = currentSessionName; // Garante que a sessão salva está selecionada
         }
-
 
         // Carrega a sessão selecionada no dropdown
         function loadSelectedSession() {
@@ -923,7 +902,7 @@
 
         // Remover participante
         function removeParticipant(index) {
-            if (confirm('Tem certeza que deseja remover este participante?')) { 
+            if (confirm('Tem certeza que deseja remover este participante?')) { // Confirmação aqui
                 if (index === currentParticipantIndex && isRunning) {
                     pauseTimer();
                 }
@@ -959,8 +938,6 @@
             currentParticipantIndex = 0;
             currentTime = 0;
             colorIndex = 0; 
-            currentSessionName = 'Nova Sessão'; // Ao limpar tudo, volta para "Nova Sessão"
-            updateSessionSelector(); // Atualiza o seletor para mostrar "Nova Sessão" selecionado
             updateParticipantsList();
             updateDisplay();
             updateDisplayWindow(); 
@@ -1364,6 +1341,99 @@
 
             displayWindow.document.close();
             updateDisplayWindow();
+        }
+
+        // Atualizar janela de display
+        function updateDisplayWindow() {
+            if (!displayWindow || displayWindow.closed) {
+                return;
+            }
+
+            const container = displayWindow.document.getElementById('displayContainer');
+            const messageArea = displayWindow.document.getElementById('displayMessageArea');
+            
+            const currentYellowAlert = parseInt(document.getElementById('yellowAlert').value) || 0;
+            const currentRedAlert = parseInt(document.getElementById('redAlert').value) || 0;
+            const currentAlertType = document.getElementById('alertType').value;
+
+            container.innerHTML = '';
+            
+            if (messageArea) {
+                messageArea.textContent = currentMessage;
+            }
+
+            if (currentMode === 'individual') {
+                const participant = participants[currentParticipantIndex];
+                const displayMinutes = Math.floor(Math.abs(currentTime) / 60);
+                const displaySeconds = Math.abs(currentTime) % 60;
+                const sign = currentTime < 0 ? '-' : '';
+
+                let timeClass = 'time-green';
+                
+                if (currentTime <= currentRedAlert) {
+                    timeClass = 'time-red';
+                } else if (currentTime <= currentYellowAlert) {
+                    timeClass = 'time-yellow';
+                }
+
+                if (currentTime < 0) {
+                    timeClass += ' time-negative';
+                }
+
+                container.innerHTML = `
+                    <div class="speaker-name" id="displaySpeaker">${participant ? participant.name : 'Aguardando...'}</div>
+                    <div class="time-display ${timeClass}" id="displayTime">${participant ? `${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}` : '00:00'}</div>
+                    <div class="status-display" id="displayStatus">${isRunning ? '🔴 Em execução' : (isPaused ? '⏸️ Pausado' : '⏹️ Parado')}</div>
+                `;
+                
+                if (currentAlertType === 'background' || currentAlertType === 'both') {
+                    if (currentTime <= currentRedAlert) {
+                        displayWindow.document.body.style.backgroundColor = '#4a0e0e';
+                    } else if (currentTime <= currentYellowAlert) {
+                        displayWindow.document.body.style.backgroundColor = '#4a320e';
+                    } else {
+                        displayWindow.document.body.style.backgroundColor = '#1a202c';
+                    }
+                } else {
+                    displayWindow.document.body.style.backgroundColor = '#1a202c';
+                }
+
+            } else if (currentMode === 'debate') {
+                const debateParticipantsHtml = participants.map((participant, index) => {
+                    const displayMinutes = Math.floor(Math.abs(participant.remainingTime) / 60);
+                    const displaySeconds = Math.abs(participant.remainingTime) % 60;
+                    const sign = participant.remainingTime < 0 ? '-' : '';
+
+                    let timeClass = '';
+                    
+                    if (participant.remainingTime <= currentRedAlert) {
+                        timeClass = 'time-red';
+                    } else if (participant.remainingTime <= currentYellowAlert) {
+                        timeClass = 'time-yellow';
+                    } else {
+                        timeClass = 'time-green';
+                    }
+
+                    if (participant.remainingTime < 0) {
+                        timeClass += ' time-negative';
+                    }
+
+                    const isActive = index === currentParticipantIndex && isRunning;
+                    return `
+                        <div class="debate-participant ${isActive ? 'active' : ''}" style="border-color: ${participant.color};">
+                            <div class="debate-name">${participant.name}</div>
+                            <div class="debate-time ${timeClass}">${sign}${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = `
+                    <div class="debate-grid">
+                        ${debateParticipantsHtml}
+                    </div>
+                `;
+                displayWindow.document.body.style.backgroundColor = '#1a202c'; 
+            }
         }
 
         // Inicializa a exibição ao carregar a página
